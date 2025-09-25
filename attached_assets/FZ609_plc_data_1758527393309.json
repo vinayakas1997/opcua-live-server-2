@@ -1,0 +1,929 @@
+{
+    "plcs": [
+        {
+            "plc_name": "FZ609",
+            "plc_ip": "192.168.20.50",
+            "plc_no":1,
+            "opcua_url": "opc.tcp://192.168.1.20:4840",
+            "address_mappings": [
+                {
+                    "plc_reg_add": "1",
+                    "data_type": "channel",
+                    "opcua_reg_add": "CH_VAR_64",
+                    "description": "Boolean channel for address 1",
+                    "metadata": {
+                        "bit_count": 3,
+                        "bit_mappings": {
+                            "bit_00": {
+                                "address": "1.00",
+                                "description": "ｼｸﾞﾅﾙﾀﾜｰ",
+                                "bit_position": 0
+                            },
+                            "bit_01": {
+                                "address": "1.01",
+                                "description": "ｼｸﾞﾅﾙﾀﾜｰ",
+                                "bit_position": 1
+                            },
+                            "bit_02": {
+                                "address": "1.02",
+                                "description": "ｼｸﾞﾅﾙﾀﾜｰ",
+                                "bit_position": 2
+                            }
+                        }
+                    }
+                },
+                {
+                    "plc_reg_add": "200",
+                    "data_type": "channel",
+                    "opcua_reg_add": "CH_VAR_65",
+                    "description": "Boolean channel for address 200",
+                    "metadata": {
+                        "bit_count": 3,
+                        "bit_mappings": {
+                            "bit_00": {
+                                "address": "200.00",
+                                "description": "TP リセット",
+                                "bit_position": 0
+                            },
+                            "bit_01": {
+                                "address": "200.01",
+                                "description": "TP リセット",
+                                "bit_position": 1
+                            },
+                            "bit_02": {
+                                "address": "200.02",
+                                "description": "TP リセット",
+                                "bit_position": 2
+                            }
+                        }
+                    }
+                },
+                {
+                    "plc_reg_add": "2100.02",
+                    "data_type": "bool",
+                    "opcua_reg_add": "NUM_VAR_01",
+                    "description": "V780_NORM"
+                },
+                {
+                    "plc_reg_add": "2300.02",
+                    "data_type": "bool",
+                    "opcua_reg_add": "NUM_VAR_02",
+                    "description": "V780_NORM"
+                },
+                {
+                    "plc_reg_add": "2500.02",
+                    "data_type": "bool",
+                    "opcua_reg_add": "NUM_VAR_03",
+                    "description": "V780_NORM"
+                },
+                {
+                    "plc_reg_add": "3100",
+                    "data_type": "channel",
+                    "opcua_reg_add": "CH_VAR_66",
+                    "description": "Boolean channel for address 3100",
+                    "metadata": {
+                        "bit_count": 2,
+                        "bit_mappings": {
+                            "bit_01": {
+                                "address": "3100.01",
+                                "description": "V780_BUSY",
+                                "bit_position": 1
+                            },
+                            "bit_02": {
+                                "address": "3100.02",
+                                "description": "V780_NORM",
+                                "bit_position": 2
+                            }
+                        }
+                    }
+                },
+                {
+                    "plc_reg_add": "3700.00",
+                    "data_type": "bool",
+                    "opcua_reg_add": "NUM_VAR_04",
+                    "description": "V780_EXE"
+                },
+                {
+                    "plc_reg_add": "4100.02",
+                    "data_type": "bool",
+                    "opcua_reg_add": "NUM_VAR_05",
+                    "description": "V780_NORM"
+                },
+                {
+                    "plc_reg_add": "4700.00",
+                    "data_type": "bool",
+                    "opcua_reg_add": "NUM_VAR_06",
+                    "description": "V780_EXE"
+                },
+                {
+                    "plc_reg_add": "5100.02",
+                    "data_type": "bool",
+                    "opcua_reg_add": "NUM_VAR_07",
+                    "description": "V780_NORM"
+                },
+                {
+                    "plc_reg_add": "5700.00",
+                    "data_type": "bool",
+                    "opcua_reg_add": "NUM_VAR_08",
+                    "description": "V780_EXE"
+                },
+                {
+                    "plc_reg_add": "D1000",
+                    "data_type": "channel",
+                    "opcua_reg_add": "CH_VAR_67",
+                    "description": "Boolean channel for address D1000",
+                    "metadata": {
+                        "bit_count": 3,
+                        "bit_mappings": {
+                            "bit_00": {
+                                "address": "D1000.00",
+                                "description": "MESV780-1_リセット",
+                                "bit_position": 0
+                            },
+                            "bit_01": {
+                                "address": "D1000.01",
+                                "description": "MESV780-2_リセット",
+                                "bit_position": 1
+                            },
+                            "bit_02": {
+                                "address": "D1000.02",
+                                "description": "MESV780-3_リセット",
+                                "bit_position": 2
+                            }
+                        }
+                    }
+                },
+                {
+                    "plc_reg_add": "D1010",
+                    "data_type": "channel",
+                    "opcua_reg_add": "CH_VAR_68",
+                    "description": "Boolean channel for address D1010",
+                    "metadata": {
+                        "bit_count": 6,
+                        "bit_mappings": {
+                            "bit_00": {
+                                "address": "D1010.00",
+                                "description": "1_V780_NORM",
+                                "bit_position": 0
+                            },
+                            "bit_01": {
+                                "address": "D1010.01",
+                                "description": "2_V780_NORM",
+                                "bit_position": 1
+                            },
+                            "bit_02": {
+                                "address": "D1010.02",
+                                "description": "3_V780_NORM",
+                                "bit_position": 2
+                            },
+                            "bit_04": {
+                                "address": "D1010.04",
+                                "description": "RFID-1完了",
+                                "bit_position": 4
+                            },
+                            "bit_05": {
+                                "address": "D1010.05",
+                                "description": "RFID-2完了",
+                                "bit_position": 5
+                            },
+                            "bit_06": {
+                                "address": "D1010.06",
+                                "description": "RFID-3完了",
+                                "bit_position": 6
+                            }
+                        }
+                    }
+                },
+                {
+                    "plc_reg_add": "D1020",
+                    "data_type": "channel",
+                    "opcua_reg_add": "CH_VAR_69",
+                    "description": "Boolean channel for address D1020",
+                    "metadata": {
+                        "bit_count": 3,
+                        "bit_mappings": {
+                            "bit_00": {
+                                "address": "D1020.00",
+                                "description": "1_V780_NORM",
+                                "bit_position": 0
+                            },
+                            "bit_01": {
+                                "address": "D1020.01",
+                                "description": "2_V780_NORM",
+                                "bit_position": 1
+                            },
+                            "bit_02": {
+                                "address": "D1020.02",
+                                "description": "3_V780_NORM",
+                                "bit_position": 2
+                            }
+                        }
+                    }
+                },
+                {
+                    "plc_reg_add": "T0000.00",
+                    "data_type": "bool",
+                    "opcua_reg_add": "T_VAR_01",
+                    "description": "5秒ｸﾛｯｸ"
+                },
+                {
+                    "plc_reg_add": "T0001.00",
+                    "data_type": "bool",
+                    "opcua_reg_add": "T_VAR_02",
+                    "description": "5秒ｸﾛｯｸ"
+                },
+                {
+                    "plc_reg_add": "W100.00",
+                    "data_type": "bool",
+                    "opcua_reg_add": "W_VAR_01",
+                    "description": "箱ID読取判定"
+                },
+                {
+                    "plc_reg_add": "W110.00",
+                    "data_type": "bool",
+                    "opcua_reg_add": "W_VAR_02",
+                    "description": "箱ID読取判定"
+                },
+                {
+                    "plc_reg_add": "W120.00",
+                    "data_type": "bool",
+                    "opcua_reg_add": "W_VAR_03",
+                    "description": "箱ID読取判定"
+                },
+                {
+                    "plc_reg_add": "W150",
+                    "data_type": "channel",
+                    "opcua_reg_add": "CH_VAR_70",
+                    "description": "Boolean channel for address W150",
+                    "metadata": {
+                        "bit_count": 3,
+                        "bit_mappings": {
+                            "bit_00": {
+                                "address": "W150.00",
+                                "description": "MESV780-1_リセット",
+                                "bit_position": 0
+                            },
+                            "bit_01": {
+                                "address": "W150.01",
+                                "description": "MESV780-1_リセット",
+                                "bit_position": 1
+                            },
+                            "bit_02": {
+                                "address": "W150.02",
+                                "description": "MESV780-3_リセット",
+                                "bit_position": 2
+                            }
+                        }
+                    }
+                },
+                {
+                    "plc_reg_add": "A401.08",
+                    "data_type": "bool",
+                    "opcua_reg_add": "A_VAR_20",
+                    "description": "ｻｲｸﾙﾀｲﾑｵｰﾊﾞｰﾌﾗｸﾞ"
+                },
+                {
+                    "plc_reg_add": "A200",
+                    "data_type": "channel",
+                    "opcua_reg_add": "CH_VAR_71",
+                    "description": "Boolean channel for address A200",
+                    "metadata": {
+                        "bit_count": 3,
+                        "bit_mappings": {
+                            "bit_11": {
+                                "address": "A200.11",
+                                "description": "運転開始時1ｻｲｸﾙONﾌﾗｸﾞ",
+                                "bit_position": 11
+                            },
+                            "bit_15": {
+                                "address": "A200.15",
+                                "description": "ﾀｽｸ初回起動ﾌﾗｸﾞ",
+                                "bit_position": 15
+                            },
+                            "bit_12": {
+                                "address": "A200.12",
+                                "description": "ｽﾃｯﾌﾟﾗﾀﾞｰ1ｻｲｸﾙONﾌﾗｸﾞ",
+                                "bit_position": 12
+                            }
+                        }
+                    }
+                },
+                {
+                    "plc_reg_add": "A402",
+                    "data_type": "channel",
+                    "opcua_reg_add": "CH_VAR_72",
+                    "description": "Boolean channel for address A402",
+                    "metadata": {
+                        "bit_count": 2,
+                        "bit_mappings": {
+                            "bit_09": {
+                                "address": "A402.09",
+                                "description": "I/O照合異常",
+                                "bit_position": 9
+                            },
+                            "bit_04": {
+                                "address": "A402.04",
+                                "description": "電池異常",
+                                "bit_position": 4
+                            }
+                        }
+                    }
+                },
+                {
+                    "plc_reg_add": "A500.15",
+                    "data_type": "bool",
+                    "opcua_reg_add": "A_VAR_21",
+                    "description": "負荷遮断ﾌﾗｸﾞ"
+                },
+                {
+                    "plc_reg_add": "110",
+                    "data_type": "channel",
+                    "opcua_reg_add": "CH_VAR_01",
+                    "description": "箱ID判定用"
+                },
+                {
+                    "plc_reg_add": "120",
+                    "data_type": "channel",
+                    "opcua_reg_add": "CH_VAR_02",
+                    "description": "箱ID判定用"
+                },
+                {
+                    "plc_reg_add": "3107",
+                    "data_type": "channel",
+                    "opcua_reg_add": "CH_VAR_03",
+                    "description": "ID読取"
+                },
+                {
+                    "plc_reg_add": "3108",
+                    "data_type": "channel",
+                    "opcua_reg_add": "CH_VAR_04",
+                    "description": "ID読取"
+                },
+                {
+                    "plc_reg_add": "3109",
+                    "data_type": "channel",
+                    "opcua_reg_add": "CH_VAR_05",
+                    "description": "ID読取"
+                },
+                {
+                    "plc_reg_add": "3110",
+                    "data_type": "channel",
+                    "opcua_reg_add": "CH_VAR_06",
+                    "description": "ID読取"
+                },
+                {
+                    "plc_reg_add": "3111",
+                    "data_type": "channel",
+                    "opcua_reg_add": "CH_VAR_07",
+                    "description": "ID読取"
+                },
+                {
+                    "plc_reg_add": "3112",
+                    "data_type": "channel",
+                    "opcua_reg_add": "CH_VAR_08",
+                    "description": "ID読取"
+                },
+                {
+                    "plc_reg_add": "4107",
+                    "data_type": "channel",
+                    "opcua_reg_add": "CH_VAR_09",
+                    "description": "ID読取"
+                },
+                {
+                    "plc_reg_add": "4108",
+                    "data_type": "channel",
+                    "opcua_reg_add": "CH_VAR_10",
+                    "description": "ID読取"
+                },
+                {
+                    "plc_reg_add": "4109",
+                    "data_type": "channel",
+                    "opcua_reg_add": "CH_VAR_11",
+                    "description": "ID読取"
+                },
+                {
+                    "plc_reg_add": "4110",
+                    "data_type": "channel",
+                    "opcua_reg_add": "CH_VAR_12",
+                    "description": "ID読取"
+                },
+                {
+                    "plc_reg_add": "4111",
+                    "data_type": "channel",
+                    "opcua_reg_add": "CH_VAR_13",
+                    "description": "ID読取"
+                },
+                {
+                    "plc_reg_add": "4112",
+                    "data_type": "channel",
+                    "opcua_reg_add": "CH_VAR_14",
+                    "description": "ID読取"
+                },
+                {
+                    "plc_reg_add": "5107",
+                    "data_type": "channel",
+                    "opcua_reg_add": "CH_VAR_15",
+                    "description": "ID読取"
+                },
+                {
+                    "plc_reg_add": "5108",
+                    "data_type": "channel",
+                    "opcua_reg_add": "CH_VAR_16",
+                    "description": "ID読取"
+                },
+                {
+                    "plc_reg_add": "5109",
+                    "data_type": "channel",
+                    "opcua_reg_add": "CH_VAR_17",
+                    "description": "ID読取"
+                },
+                {
+                    "plc_reg_add": "5110",
+                    "data_type": "channel",
+                    "opcua_reg_add": "CH_VAR_18",
+                    "description": "ID読取"
+                },
+                {
+                    "plc_reg_add": "5111",
+                    "data_type": "channel",
+                    "opcua_reg_add": "CH_VAR_19",
+                    "description": "ID読取"
+                },
+                {
+                    "plc_reg_add": "5112",
+                    "data_type": "channel",
+                    "opcua_reg_add": "CH_VAR_20",
+                    "description": "ID読取"
+                },
+                {
+                    "plc_reg_add": "D3360",
+                    "data_type": "channel",
+                    "opcua_reg_add": "CH_VAR_21",
+                    "description": "FZ620_OUT"
+                },
+                {
+                    "plc_reg_add": "D3460",
+                    "data_type": "channel",
+                    "opcua_reg_add": "CH_VAR_22",
+                    "description": "FZ621_OUT"
+                },
+                {
+                    "plc_reg_add": "D3560",
+                    "data_type": "channel",
+                    "opcua_reg_add": "CH_VAR_23",
+                    "description": "FZ622_OUT"
+                },
+                {
+                    "plc_reg_add": "E00010",
+                    "data_type": "channel",
+                    "opcua_reg_add": "CH_VAR_24",
+                    "description": "箱ID判定用"
+                },
+                {
+                    "plc_reg_add": "E00020",
+                    "data_type": "channel",
+                    "opcua_reg_add": "CH_VAR_25",
+                    "description": "箱ID判定用"
+                },
+                {
+                    "plc_reg_add": "E00030",
+                    "data_type": "channel",
+                    "opcua_reg_add": "CH_VAR_26",
+                    "description": "箱ID判定用"
+                },
+                {
+                    "plc_reg_add": "E01000",
+                    "data_type": "channel",
+                    "opcua_reg_add": "CH_VAR_27",
+                    "description": "RFID1桁目（箱）"
+                },
+                {
+                    "plc_reg_add": "E01001",
+                    "data_type": "channel",
+                    "opcua_reg_add": "CH_VAR_28",
+                    "description": "RFID2桁目（箱）"
+                },
+                {
+                    "plc_reg_add": "E01002",
+                    "data_type": "channel",
+                    "opcua_reg_add": "CH_VAR_29",
+                    "description": "RFID3桁目（箱）"
+                },
+                {
+                    "plc_reg_add": "E01003",
+                    "data_type": "channel",
+                    "opcua_reg_add": "CH_VAR_30",
+                    "description": "RFID4桁目（箱）"
+                },
+                {
+                    "plc_reg_add": "E01004",
+                    "data_type": "channel",
+                    "opcua_reg_add": "CH_VAR_31",
+                    "description": "RFID5桁目（箱）"
+                },
+                {
+                    "plc_reg_add": "E01005",
+                    "data_type": "channel",
+                    "opcua_reg_add": "CH_VAR_32",
+                    "description": "RFID6桁目（箱）"
+                },
+                {
+                    "plc_reg_add": "E01010",
+                    "data_type": "channel",
+                    "opcua_reg_add": "CH_VAR_33",
+                    "description": "RFID1桁目（背番号）"
+                },
+                {
+                    "plc_reg_add": "E01011",
+                    "data_type": "channel",
+                    "opcua_reg_add": "CH_VAR_34",
+                    "description": "RFID2桁目（背番号）"
+                },
+                {
+                    "plc_reg_add": "E01012",
+                    "data_type": "channel",
+                    "opcua_reg_add": "CH_VAR_35",
+                    "description": "RFID3桁目（背番号）"
+                },
+                {
+                    "plc_reg_add": "E01013",
+                    "data_type": "channel",
+                    "opcua_reg_add": "CH_VAR_36",
+                    "description": "RFID4桁目（背番号）"
+                },
+                {
+                    "plc_reg_add": "E01014",
+                    "data_type": "channel",
+                    "opcua_reg_add": "CH_VAR_37",
+                    "description": "RFID5桁目（背番号）"
+                },
+                {
+                    "plc_reg_add": "E01015",
+                    "data_type": "channel",
+                    "opcua_reg_add": "CH_VAR_38",
+                    "description": "RFID6桁目（背番号）"
+                },
+                {
+                    "plc_reg_add": "E01020",
+                    "data_type": "channel",
+                    "opcua_reg_add": "CH_VAR_39",
+                    "description": "RFID1桁目"
+                },
+                {
+                    "plc_reg_add": "E01022",
+                    "data_type": "channel",
+                    "opcua_reg_add": "CH_VAR_40",
+                    "description": "RFID3桁目"
+                },
+                {
+                    "plc_reg_add": "E02000",
+                    "data_type": "channel",
+                    "opcua_reg_add": "CH_VAR_41",
+                    "description": "RFID1桁目"
+                },
+                {
+                    "plc_reg_add": "E02001",
+                    "data_type": "channel",
+                    "opcua_reg_add": "CH_VAR_42",
+                    "description": "RFID2桁目"
+                },
+                {
+                    "plc_reg_add": "E02002",
+                    "data_type": "channel",
+                    "opcua_reg_add": "CH_VAR_43",
+                    "description": "RFID3桁目"
+                },
+                {
+                    "plc_reg_add": "E02003",
+                    "data_type": "channel",
+                    "opcua_reg_add": "CH_VAR_44",
+                    "description": "RFID4桁目"
+                },
+                {
+                    "plc_reg_add": "E02004",
+                    "data_type": "channel",
+                    "opcua_reg_add": "CH_VAR_45",
+                    "description": "RFID5桁目"
+                },
+                {
+                    "plc_reg_add": "E02005",
+                    "data_type": "channel",
+                    "opcua_reg_add": "CH_VAR_46",
+                    "description": "RFID6桁目"
+                },
+                {
+                    "plc_reg_add": "E02010",
+                    "data_type": "channel",
+                    "opcua_reg_add": "CH_VAR_47",
+                    "description": "RFID1桁目"
+                },
+                {
+                    "plc_reg_add": "E02012",
+                    "data_type": "channel",
+                    "opcua_reg_add": "CH_VAR_48",
+                    "description": "RFID3桁目"
+                },
+                {
+                    "plc_reg_add": "E02013",
+                    "data_type": "channel",
+                    "opcua_reg_add": "CH_VAR_49",
+                    "description": "RFID4桁目"
+                },
+                {
+                    "plc_reg_add": "E02014",
+                    "data_type": "channel",
+                    "opcua_reg_add": "CH_VAR_50",
+                    "description": "RFID5桁目"
+                },
+                {
+                    "plc_reg_add": "E02015",
+                    "data_type": "channel",
+                    "opcua_reg_add": "CH_VAR_51",
+                    "description": "RFID6桁目"
+                },
+                {
+                    "plc_reg_add": "E03000",
+                    "data_type": "channel",
+                    "opcua_reg_add": "CH_VAR_52",
+                    "description": "RFID1桁目（箱）"
+                },
+                {
+                    "plc_reg_add": "E03001",
+                    "data_type": "channel",
+                    "opcua_reg_add": "CH_VAR_53",
+                    "description": "RFID2桁目（箱）"
+                },
+                {
+                    "plc_reg_add": "E03002",
+                    "data_type": "channel",
+                    "opcua_reg_add": "CH_VAR_54",
+                    "description": "RFID3桁目（箱）"
+                },
+                {
+                    "plc_reg_add": "E03003",
+                    "data_type": "channel",
+                    "opcua_reg_add": "CH_VAR_55",
+                    "description": "RFID4桁目（箱）"
+                },
+                {
+                    "plc_reg_add": "E03004",
+                    "data_type": "channel",
+                    "opcua_reg_add": "CH_VAR_56",
+                    "description": "RFID5桁目（箱）"
+                },
+                {
+                    "plc_reg_add": "E03005",
+                    "data_type": "channel",
+                    "opcua_reg_add": "CH_VAR_57",
+                    "description": "RFID6桁目（箱）"
+                },
+                {
+                    "plc_reg_add": "E03010",
+                    "data_type": "channel",
+                    "opcua_reg_add": "CH_VAR_58",
+                    "description": "RFID1桁目（背番号）"
+                },
+                {
+                    "plc_reg_add": "E03011",
+                    "data_type": "channel",
+                    "opcua_reg_add": "CH_VAR_59",
+                    "description": "RFID2桁目（背番号）"
+                },
+                {
+                    "plc_reg_add": "E03012",
+                    "data_type": "channel",
+                    "opcua_reg_add": "CH_VAR_60",
+                    "description": "RFID3桁目（背番号）"
+                },
+                {
+                    "plc_reg_add": "E03013",
+                    "data_type": "channel",
+                    "opcua_reg_add": "CH_VAR_61",
+                    "description": "RFID4桁目（背番号）"
+                },
+                {
+                    "plc_reg_add": "E03014",
+                    "data_type": "channel",
+                    "opcua_reg_add": "CH_VAR_62",
+                    "description": "RFID5桁目（背番号）"
+                },
+                {
+                    "plc_reg_add": "E03015",
+                    "data_type": "channel",
+                    "opcua_reg_add": "CH_VAR_63",
+                    "description": "RFID6桁目（背番号）"
+                },
+                {
+                    "plc_reg_add": "D0",
+                    "data_type": "word",
+                    "opcua_reg_add": "D_VAR_01",
+                    "description": ""
+                },
+                {
+                    "plc_reg_add": "D1",
+                    "data_type": "word",
+                    "opcua_reg_add": "D_VAR_02",
+                    "description": ""
+                },
+                {
+                    "plc_reg_add": "D2",
+                    "data_type": "word",
+                    "opcua_reg_add": "D_VAR_03",
+                    "description": ""
+                },
+                {
+                    "plc_reg_add": "D3",
+                    "data_type": "word",
+                    "opcua_reg_add": "D_VAR_04",
+                    "description": ""
+                },
+                {
+                    "plc_reg_add": "D4",
+                    "data_type": "word",
+                    "opcua_reg_add": "D_VAR_05",
+                    "description": ""
+                },
+                {
+                    "plc_reg_add": "D100",
+                    "data_type": "word",
+                    "opcua_reg_add": "D_VAR_06",
+                    "description": ""
+                },
+                {
+                    "plc_reg_add": "D101",
+                    "data_type": "word",
+                    "opcua_reg_add": "D_VAR_07",
+                    "description": ""
+                },
+                {
+                    "plc_reg_add": "D102",
+                    "data_type": "word",
+                    "opcua_reg_add": "D_VAR_08",
+                    "description": ""
+                },
+                {
+                    "plc_reg_add": "D103",
+                    "data_type": "word",
+                    "opcua_reg_add": "D_VAR_09",
+                    "description": ""
+                },
+                {
+                    "plc_reg_add": "D104",
+                    "data_type": "word",
+                    "opcua_reg_add": "D_VAR_10",
+                    "description": ""
+                },
+                {
+                    "plc_reg_add": "D1000",
+                    "data_type": "word",
+                    "opcua_reg_add": "D_VAR_11",
+                    "description": ""
+                },
+                {
+                    "plc_reg_add": "D1100",
+                    "data_type": "word",
+                    "opcua_reg_add": "D_VAR_12",
+                    "description": ""
+                },
+                {
+                    "plc_reg_add": "D1200",
+                    "data_type": "word",
+                    "opcua_reg_add": "D_VAR_13",
+                    "description": ""
+                },
+                {
+                    "plc_reg_add": "D1500",
+                    "data_type": "word",
+                    "opcua_reg_add": "D_VAR_14",
+                    "description": ""
+                },
+                {
+                    "plc_reg_add": "D1600",
+                    "data_type": "word",
+                    "opcua_reg_add": "D_VAR_15",
+                    "description": ""
+                },
+                {
+                    "plc_reg_add": "D1600",
+                    "data_type": "word",
+                    "opcua_reg_add": "D_VAR_16",
+                    "description": ""
+                },
+                {
+                    "plc_reg_add": "A450",
+                    "data_type": "word",
+                    "opcua_reg_add": "A_VAR_01",
+                    "description": "CIOｴﾘｱ指定"
+                },
+                {
+                    "plc_reg_add": "A264",
+                    "data_type": "udint",
+                    "opcua_reg_add": "A_VAR_02",
+                    "description": "ｻｲｸﾙﾀｲﾑ現在値"
+                },
+                {
+                    "plc_reg_add": "A460",
+                    "data_type": "word",
+                    "opcua_reg_add": "A_VAR_03",
+                    "description": "DMｴﾘｱ指定"
+                },
+                {
+                    "plc_reg_add": "A461",
+                    "data_type": "word",
+                    "opcua_reg_add": "A_VAR_04",
+                    "description": "EM0ｴﾘｱ指定"
+                },
+                {
+                    "plc_reg_add": "A462",
+                    "data_type": "word",
+                    "opcua_reg_add": "A_VAR_05",
+                    "description": "EM1ｴﾘｱ指定"
+                },
+                {
+                    "plc_reg_add": "A463",
+                    "data_type": "word",
+                    "opcua_reg_add": "A_VAR_06",
+                    "description": "EM2ｴﾘｱ指定"
+                },
+                {
+                    "plc_reg_add": "A464",
+                    "data_type": "word",
+                    "opcua_reg_add": "A_VAR_07",
+                    "description": "EM3ｴﾘｱ指定"
+                },
+                {
+                    "plc_reg_add": "A465",
+                    "data_type": "word",
+                    "opcua_reg_add": "A_VAR_08",
+                    "description": "EM4ｴﾘｱ指定"
+                },
+                {
+                    "plc_reg_add": "A466",
+                    "data_type": "word",
+                    "opcua_reg_add": "A_VAR_09",
+                    "description": "EM5ｴﾘｱ指定"
+                },
+                {
+                    "plc_reg_add": "A467",
+                    "data_type": "word",
+                    "opcua_reg_add": "A_VAR_10",
+                    "description": "EM6ｴﾘｱ指定"
+                },
+                {
+                    "plc_reg_add": "A468",
+                    "data_type": "word",
+                    "opcua_reg_add": "A_VAR_11",
+                    "description": "EM7ｴﾘｱ指定"
+                },
+                {
+                    "plc_reg_add": "A469",
+                    "data_type": "word",
+                    "opcua_reg_add": "A_VAR_12",
+                    "description": "EM8ｴﾘｱ指定"
+                },
+                {
+                    "plc_reg_add": "A470",
+                    "data_type": "word",
+                    "opcua_reg_add": "A_VAR_13",
+                    "description": "EM9ｴﾘｱ指定"
+                },
+                {
+                    "plc_reg_add": "A471",
+                    "data_type": "word",
+                    "opcua_reg_add": "A_VAR_14",
+                    "description": "EMAｴﾘｱ指定"
+                },
+                {
+                    "plc_reg_add": "A472",
+                    "data_type": "word",
+                    "opcua_reg_add": "A_VAR_15",
+                    "description": "EMBｴﾘｱ指定"
+                },
+                {
+                    "plc_reg_add": "A473",
+                    "data_type": "word",
+                    "opcua_reg_add": "A_VAR_16",
+                    "description": "EMCｴﾘｱ指定"
+                },
+                {
+                    "plc_reg_add": "A452",
+                    "data_type": "word",
+                    "opcua_reg_add": "A_VAR_17",
+                    "description": "HRｴﾘｱ指定"
+                },
+                {
+                    "plc_reg_add": "A262",
+                    "data_type": "udint",
+                    "opcua_reg_add": "A_VAR_18",
+                    "description": "ｻｲｸﾙﾀｲﾑ最大値"
+                },
+                {
+                    "plc_reg_add": "A451",
+                    "data_type": "word",
+                    "opcua_reg_add": "A_VAR_19",
+                    "description": "WRｴﾘｱ指定"
+                }
+            ]
+        }
+    ]
+}

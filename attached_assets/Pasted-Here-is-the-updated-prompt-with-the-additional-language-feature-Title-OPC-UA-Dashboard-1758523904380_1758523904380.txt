@@ -1,0 +1,71 @@
+Here is the updated prompt with the additional language feature:
+
+---
+
+**Title: OPC UA Dashboard Live Data Tracking**
+
+**Instructions:**
+
+Design a web-based dashboard with the following features and functionalities:
+
+**Navigation and Interface:**
+
+- Implement a static navigation bar with options: "Add New" and a search button. Beneath, include a scrollable, arranged in terms of plc_no(can be changed to the descending or ascending) ordered list displaying PLCs in the format `P_{plc_no}_{plc_name}`. Long names should truncate with ellipses and reveal the full name on hover.
+- Integrate a status indicator showing green (active), yellow (maintenance), and red (error).
+- Add a language switch button at the top for English (EN) and Japanese (JP).
+
+**JSON Upload and Preview:**
+
+- Users will upload a JSON file containing PLC details (`plc_name`, `plc_no`, `plc_ip`, `opcua_url`, and address mappings).
+- Display all details from the uploaded JSON file in a preview, emphasizing the status before adding to the list.
+
+**Server Management:**
+
+1. **Server List & Selection:**
+   - Present a list of OPC UA server URLs with checkboxes/toggles for selection.
+   - Connect only the selected servers; automatically disconnect when deselected.
+
+2. **Live Data Monitoring:**
+   - Connect to selected OPC UA servers to fetch variable values.
+   - Display data in a table or grid format with columns for Node Name/Description, Node ID, Current Value, and Timestamp of the last update.
+   - Ensure real-time updates every 500ms–1s.
+
+3. **Efficient Updates:**
+   - Subscribe to changes from servers for updates rather than constant polling.
+   - Optimize for minimum CPU/network usage, subscribing only to active servers.
+
+**Design Considerations:**
+
+4. **UI Design:**
+   - Create a clean, modern, and responsive layout.
+   - Include a status indicator for each server: Active/Inactive/Error.
+   - Provide optional refresh or reconnect buttons for each server.
+
+5. **Backend & Integration:**
+   - Use Python + FastAPI/Flask for the backend via python-opcua.
+   - Manage connection, disconnection, subscription, and unsubscription per server.
+   - Expose API endpoints for real-time frontend updates.
+
+6. **Frontend Development:**
+   - Employ React, Tailwind, and Typescript.
+   - Implement dynamic table updates without page reloads.
+   - Clearly show loading/connection errors.
+
+**Additional Features:**
+
+7. **Features:**
+   - Allow node filtering by name or type.
+   - Add historical value charts for nodes.
+   - Enable CSV download for saving current values.
+
+8. **Constraints:**
+   - Compatible with multiple OPC UA servers, connecting only to active selections.
+   - Lightweight for standard PCs or edge devices like Triton.
+   - Ensure intuitive and responsive UI interactions.
+
+9. **Scheduling Checks:**
+   - Show last checked time for active/inactive statuses and allow users to set check intervals (e.g., 10min, 20min) for OPC UA URL connections.
+
+---
+
+Ensure that the design and interaction is user-friendly and meets all specified requirements to provide efficient monitoring and management of PLC Servers via OPC UA, now with multilingual support.

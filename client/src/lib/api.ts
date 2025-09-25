@@ -1,0 +1,86 @@
+import type { PLC, PLCConfig } from "@shared/schema";
+
+const API_BASE = "/api";
+
+export const api = {
+  // PLC Management
+  async getAllPLCs(): Promise<PLC[]> {
+    const response = await fetch(`${API_BASE}/plcs`);
+    if (!response.ok) throw new Error("Failed to fetch PLCs");
+    return response.json();
+  },
+
+  async getAllPLCsWithMappings(): Promise<PLC[]> {
+    const response = await fetch(`${API_BASE}/plcs?includeMappings=true`);
+    if (!response.ok) throw new Error("Failed to fetch PLCs");
+    return response.json();
+  },
+
+  async getPLCById(id: string): Promise<PLC> {
+    const response = await fetch(`${API_BASE}/plcs/${id}`);
+    if (!response.ok) throw new Error("Failed to fetch PLC");
+    return response.json();
+  },
+
+  async createPLC(config: PLCConfig): Promise<PLC> {
+    const response = await fetch(`${API_BASE}/plcs`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(config),
+    });
+    if (!response.ok) throw new Error("Failed to create PLC");
+    return response.json();
+  },
+
+  async updatePLC(id: string, updates: Partial<PLC>): Promise<PLC> {
+    const response = await fetch(`${API_BASE}/plcs/${id}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(updates),
+    });
+    if (!response.ok) throw new Error("Failed to update PLC");
+    return response.json();
+  },
+
+  async deletePLC(id: string): Promise<void> {
+    const response = await fetch(`${API_BASE}/plcs/${id}`, {
+      method: "DELETE",
+    });
+    if (!response.ok) throw new Error("Failed to delete PLC");
+  },
+
+  // Connection Management
+  async connectPLC(id: string): Promise<PLC> {
+    const response = await fetch(`${API_BASE}/plcs/${id}/connect`, {
+      method: "POST",
+    });
+    if (!response.ok) throw new Error("Failed to connect PLC");
+    return response.json();
+  },
+
+  async disconnectPLC(id: string): Promise<PLC> {
+    const response = await fetch(`${API_BASE}/plcs/${id}/disconnect`, {
+      method: "POST",
+    });
+    if (!response.ok) throw new Error("Failed to disconnect PLC");
+    return response.json();
+  },
+
+  // File Upload
+  async uploadJSONConfig(file: File): Promise<{ success: boolean; plc: PLC }> {
+    const formData = new FormData();
+    formData.append("jsonFile", file);
+
+    const response = await fetch(`${API_BASE}/upload/json`, {
+      method: "POST",
+      body: formData,
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.error || "Failed to upload file");
+    }
+
+    return response.json();
+  },
+};
