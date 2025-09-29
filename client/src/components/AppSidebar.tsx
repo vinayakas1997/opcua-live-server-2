@@ -35,6 +35,7 @@ interface AppSidebarProps {
   onSelectPlc: (plcId: string) => void;
   onConnect: (plcId: string) => void;
   onDisconnect: (plcId: string) => void;
+  onCheckStatus: (plcId: string) => void;
   onRefresh: (plcId: string) => void;
   onConfigure: (plcId: string) => void;
   onDelete: (plcId: string) => void;
@@ -48,6 +49,7 @@ export function AppSidebar({
   onSelectPlc,
   onConnect,
   onDisconnect,
+  onCheckStatus,
   onRefresh,
   onConfigure,
   onDelete
@@ -74,14 +76,23 @@ export function AppSidebar({
   const activeCount = plcs.filter(plc => plc.status === "active").length;
   const errorCount = plcs.filter(plc => plc.status === "error").length;
 
-  const handleToggleConnection = (plc: PLC) => {
+  const handlePLCClick = (plc: PLC) => {
     // Print the PLC number to console
-    console.log('AppSidebar: handleToggleConnection called for PLC:', plc.id, plc.plc_name);
+    console.log('AppSidebar: handlePLCClick called for PLC:', plc.id, plc.plc_name);
 
     // Select the PLC when clicked
     console.log('AppSidebar: calling onSelectPlc with:', plc.id);
     onSelectPlc(plc.id);
 
+    // Check status instead of connect/disconnect
+    console.log('AppSidebar: calling onCheckStatus with:', plc.id);
+    onCheckStatus(plc.id);
+  };
+
+  const handleWifiClick = (plc: PLC, e: React.MouseEvent) => {
+    e.stopPropagation();
+    console.log('AppSidebar: wifi click for PLC:', plc.id);
+    
     if (selectedPLCs.has(plc.id)) {
       onDisconnect(plc.id);
     } else {
@@ -160,7 +171,7 @@ export function AppSidebar({
                         className={`w-full justify-between p-3 h-auto ${
                           isConnected ? 'bg-sidebar-accent' : ''
                         }`}
-                        onClick={() => handleToggleConnection(plc)}
+                        onClick={() => handlePLCClick(plc)}
                         data-testid={`sidebar-plc-${plc.id}`}
                       >
                         <div className="flex items-center gap-2 min-w-0 flex-1">
@@ -180,10 +191,7 @@ export function AppSidebar({
                             variant="ghost"
                             size="sm"
                             className="h-4 w-4 p-0"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleToggleConnection(plc);
-                            }}
+                            onClick={(e) => handleWifiClick(plc, e)}
                             data-testid={`button-connect-inline-${plc.id}`}
                           >
                             {plc.status === 'active' ? (

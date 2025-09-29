@@ -1,6 +1,6 @@
 import sqlite3
 from opcua import Client, ua
-
+import socket
 
 DB_NAME = "opcua.db"
 
@@ -81,18 +81,53 @@ def filter_nodes(plc_no: int, nodes_dict: dict):
     return filtered
 
 
+# def register_plc_and_nodes(plc_no: int, opcua_url: str, db_conn):
+#     client = Client(opcua_url)
+#     try:
+#         client.connect()
+#         root = client.get_objects_node()
+
+#         # 1. Browse
+#         all_nodes = recursive_browse(root, {})
+
+#         # 2. Filter based on naming convention
+#         filtered_nodes = filter_nodes(plc_no, all_nodes)
+
+#         # 3. Insert PLC info with nodes_count
+#         cur = db_conn.cursor()
+#         cur.execute(
+#             "INSERT OR REPLACE INTO plcs (plc_no, opcua_url, nodes_count) VALUES (?, ?, ?)",
+#             (plc_no, opcua_url, len(filtered_nodes))
+#         )
+
+#         # 4. Insert all nodes into nodes table
+#         for name, node_id in filtered_nodes.items():
+#             cur.execute(
+#                 "INSERT OR IGNORE INTO nodes (plc_no, node_name, node_id) VALUES (?, ?, ?)",
+#                 (plc_no, name, node_id)
+#             )
+#         db_conn.commit()
+
+#         return {"status": "success", "nodes_count": len(filtered_nodes)}
+
+#     except Exception as e:
+#         return {"status": "error", "message": str(e)}
+
+#     finally:
+#         client.disconnect()
+
 def register_plc_and_nodes(plc_no: int, opcua_url: str, db_conn):
     client = Client(opcua_url)
     try:
         client.connect()
         root = client.get_objects_node()
-
+        # print(root)#-- checked 
         # 1. Browse
         all_nodes = recursive_browse(root, {})
-
+        # print(all_nodes)#--checked
         # 2. Filter based on naming convention
         filtered_nodes = filter_nodes(plc_no, all_nodes)
-
+        # print(filtered_nodes) #--checked
         # 3. Insert PLC info with nodes_count
         cur = db_conn.cursor()
         cur.execute(
@@ -110,8 +145,24 @@ def register_plc_and_nodes(plc_no: int, opcua_url: str, db_conn):
 
         return {"status": "success", "nodes_count": len(filtered_nodes)}
 
+    except socket.gaierror:
+        # Cannot resolve hostname / connection failed
+        return {"status": "error", "message": "Connection error: could not resolve server address"}
+
+    except ConnectionRefusedError:
+        # Server is not running
+        return {"status": "error", "message": "Connection refused: OPC UA server not reachable"}
+
+    except ua.UaStatusCodeError as e:
+        # OPC UA specific error (e.g., bad session)
+        return {"status": "error", "message": f"OPC UA server error: {e}"}
+
     except Exception as e:
-        return {"status": "error", "message": str(e)}
+        # Fallback for unexpected errors
+        return {"status": "error", "message": f"Unexpected error: {str(e)}"}
 
     finally:
-        client.disconnect()
+        try:
+            client.disconnect()
+        except:
+            pass

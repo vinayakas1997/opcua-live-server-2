@@ -79,17 +79,58 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // PLC Connection Management
   app.post("/api/plcs/:id/connect", async (req, res) => {
     try {
-      const plc = await storage.updatePLC(req.params.id, {
-        is_connected: true,
-        status: "active",
-        last_checked: new Date(),
-      });
+      const plc = await storage.getPLCById(req.params.id);
       if (!plc) {
         return res.status(404).json({ error: "PLC not found" });
       }
-      res.json(plc);
+
+      if (!plc.plc_no || !plc.opcua_url) {
+        return res.status(400).json({ error: "PLC missing plc_no or opcua_url" });
+      }
+
+      const backendResponse = await fetch("http://localhost:8000/connect", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          plc_no: plc.plc_no,
+          opcua_url: plc.opcua_url,
+        }),
+      });
+
+      let updatedStatus: "active" | "error" = "error";
+      let isConnected = false;
+
+      if (backendResponse.ok) {
+        const backendData = await backendResponse.json();
+        if (backendData.status === "connected") {
+          updatedStatus = "active";
+          isConnected = true;
+        }
+      }
+
+      const updatedPLC = await storage.updatePLC(req.params.id, {
+        status: updatedStatus,
+        is_connected: isConnected,
+        last_checked: new Date(),
+      });
+
+      if (!updatedPLC) {
+        return res.status(500).json({ error: "Failed to update PLC status" });
+      }
+
+      res.json(updatedPLC);
     } catch (error) {
       console.error("Error connecting PLC:", error);
+      // On any error, ensure status is error
+      try {
+        await storage.updatePLC(req.params.id, {
+          status: "error",
+          is_connected: false,
+          last_checked: new Date(),
+        });
+      } catch (updateError) {
+        console.error("Failed to update error status:", updateError);
+      }
       res.status(500).json({ error: "Failed to connect PLC" });
     }
   });
@@ -108,6 +149,88 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error disconnecting PLC:", error);
       res.status(500).json({ error: "Failed to disconnect PLC" });
+    }
+  });
+
+  // PLC Status Check - calls Python backend to verify connection
+  app.get("/api/plcs/:id/check-status", async (req, res) => {
+    try {
+      // 1. Get PLC data from database using plc_id
+      const plc = await storage.getPLCById(req.params.id);
+      if (!plc) {
+        return res.status(404).json({ error: "PLC not found" });
+      }
+
+      if (!plc.plc_no || !plc.opcua_url) {
+        return res.status(400).json({ error: "PLC missing plc_no or opcua_url" });
+      }
+
+      // 2. Call Python backend /connect to check status
+      const backendResponse = await fetch("http://localhost:8000/connect", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          plc_no: plc.plc_no,
+          opcua_url: plc.opcua_url,
+        }),
+      });
+
+      // 3. Process response and determine status
+      let connectionStatus: "active" | "error" = "error";
+      let isConnected = false;
+      let backendMessage = "";
+
+      if (backendResponse.ok) {
+        const backendData = await backendResponse.json();
+        if (backendData.status === "connected") {
+          connectionStatus = "active";
+          isConnected = true;
+          backendMessage = `Connected successfully. ${backendData.nodes_registered || 0} nodes registered.`;
+        } else {
+          backendMessage = "Backend responded but connection failed";
+        }
+      } else {
+        const errorData = await backendResponse.json().catch(() => ({}));
+        backendMessage = errorData.detail || `HTTP ${backendResponse.status}: ${backendResponse.statusText}`;
+      }
+
+      // 4. Update PLC status in database
+      const updatedPLC = await storage.updatePLC(req.params.id, {
+        status: connectionStatus,
+        is_connected: isConnected,
+        last_checked: new Date(),
+      });
+
+      // 5. Return status to frontend
+      res.json({
+        plc_id: req.params.id,
+        plc_no: plc.plc_no,
+        opcua_url: plc.opcua_url,
+        is_connected: isConnected,
+        status: connectionStatus,
+        last_checked: new Date(),
+        message: backendMessage,
+        backend_response: backendResponse.ok
+      });
+
+    } catch (error) {
+      console.error("Error checking PLC status:", error);
+      
+      // On any error, ensure status is error
+      try {
+        await storage.updatePLC(req.params.id, {
+          status: "error",
+          is_connected: false,
+          last_checked: new Date(),
+        });
+      } catch (updateError) {
+        console.error("Failed to update error status:", updateError);
+      }
+      
+      res.status(500).json({ 
+        error: "Failed to check PLC status",
+        message: error instanceof Error ? error.message : "Unknown error"
+      });
     }
   });
 

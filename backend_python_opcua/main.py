@@ -56,6 +56,10 @@ app.add_middleware(CORSMiddleware,
                    allow_headers=["*"])
 
 # ---- API Endpoints ----
+@app.get("/")
+async def root():
+    return {"message": "FastAPI OPC UA backend is running 🚀"}
+
 # 1: connect and register PLC + nodes ----
 @app.post("/connect")
 async def connect_plc(payload: ClientSendOpcuaUrl):
@@ -75,4 +79,61 @@ async def connect_plc(payload: ClientSendOpcuaUrl):
     }
 
 
-#2. get all the nodes names from the server and save to the db
+#2. Now when the status is connected , recieve the ClientSendNodeNames and send the data through ServerSendDataDict
+@app.post("/read_nodes", response_model=ServerSendDataDict)
+async def read_nodes(payload: ClientSendNodeNames):
+    """
+    Given a PLC number and list of node names:
+    1. Find their node IDs from DB
+    2. Connect to the PLC's OPC UA server
+    3. Read current values
+    4. Return {node_name: value} dict
+    """
+    try:
+        cur = db_conn.cursor()
+        # 0) properly managing the nodes 
+
+        # 1) Get OPC UA server URL for this PLC
+        cur.execute("SELECT opcua_url FROM plcs WHERE plc_no = ?", (payload.plc_no,))
+        row = cur.fetchone()
+        if not row:
+            raise HTTPException(status_code=404, detail=f"PLC {payload.plc_no} not found")
+        opcua_url = row[0]
+
+        # 2) Fetch node_ids for the given node_names
+        query = f"""
+        SELECT node_name, node_id 
+        FROM nodes 
+        WHERE plc_no = ? AND node_name IN ({','.join(['?']*len(payload.node_names))})
+        """
+        cur.execute(query, (payload.plc_no, *payload.node_names))
+        rows = cur.fetchall()
+
+        if not rows:
+            raise HTTPException(status_code=404, detail="No matching nodes found in DB")
+
+        
+        #2.1 creating the dictionary with node_names
+        node_map = dict(rows)   # {node_name: node_id}
+
+        # 3) Connect to PLC and read values
+        client = Client(opcua_url)
+        client.connect()
+
+        data = {}
+        for name, node_id in node_map.items():
+            try:
+                node = client.get_node(node_id)
+                data[name] = node.get_value()
+            except Exception as e:
+                data[name] = f"Error: {str(e)}"
+
+        client.disconnect()
+
+        # 4) Return result to client
+        return {"data": data}
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Unexpected error: {str(e)}")

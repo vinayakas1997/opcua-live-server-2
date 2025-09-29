@@ -1,0 +1,167 @@
+{
+  "plcs": [
+    {
+      "plc_name": "PLC1",
+      "plc_no": 3,
+      "plc_ip": "192.168.2.2",
+      "opcua_url": "opc.tcp://192.168.1.20:4840",
+      "address_mappings": [
+        {
+          "plc_reg_add": "HEARTBEAT",
+          "data_type": "bool",
+          "opcua_reg_add": "P3_running",
+          "description": "heartbeat of the plc",
+          "Memory_Area": "H"
+        },
+        {
+          "plc_reg_add": "0.00",
+          "data_type": "bool",
+          "opcua_reg_add": "P3_IO_0_B00",
+          "description": "P_On",
+          "Memory_Area": "I/O"
+        },
+        {
+          "plc_reg_add": "1.01",
+          "data_type": "bool",
+          "opcua_reg_add": "P3_IO_1_B01",
+          "description": "output bit",
+          "Memory_Area": "I/O"
+        },
+        {
+          "plc_reg_add": "A0.01",
+          "data_type": "bool",
+          "opcua_reg_add": "P3_A_0_B01",
+          "description": "on switch",
+          "Memory_Area": "A"
+        },
+        {
+          "plc_reg_add": "A500",
+          "data_type": "channel",
+          "opcua_reg_add": "P3_A_500_BC",
+          "description": "Boolean channel for address A500",
+          "Memory_Area": "A",
+          "metadata": {
+            "bit_count": 2,
+            "bit_mappings": {
+              "bit_00": {
+                "address": "A500.00",
+                "description": "always on",
+                "bit_position": 0
+              },
+              "bit_15": {
+                "address": "A500.15",
+                "description": "負荷遮断ﾌﾗｸﾞ",
+                "bit_position": 15
+              }
+            }
+          }
+        },
+        {
+          "plc_reg_add": "C0001.00",
+          "data_type": "bool",
+          "opcua_reg_add": "P3_C_0001_B00",
+          "description": "Counter itself",
+          "Memory_Area": "C"
+        },
+        {
+          "plc_reg_add": "H1.00",
+          "data_type": "bool",
+          "opcua_reg_add": "P3_H_1_B00",
+          "description": "holding area ",
+          "Memory_Area": "H"
+        },
+        {
+          "plc_reg_add": "T0000.00",
+          "data_type": "bool",
+          "opcua_reg_add": "P3_T_0000_B00",
+          "description": "timer",
+          "Memory_Area": "T"
+        },
+        {
+          "plc_reg_add": "A200",
+          "data_type": "channel",
+          "opcua_reg_add": "P3_A_200_BC",
+          "description": "Boolean channel for address A200",
+          "Memory_Area": "A",
+          "metadata": {
+            "bit_count": 3,
+            "bit_mappings": {
+              "bit_11": {
+                "address": "A200.11",
+                "description": "運転開始時1ｻｲｸﾙONﾌﾗｸﾞ",
+                "bit_position": 11
+              },
+              "bit_15": {
+                "address": "A200.15",
+                "description": "ﾀｽｸ初回起動ﾌﾗｸﾞ",
+                "bit_position": 15
+              },
+              "bit_12": {
+                "address": "A200.12",
+                "description": "ｽﾃｯﾌﾟﾗﾀﾞｰ1ｻｲｸﾙONﾌﾗｸﾞ",
+                "bit_position": 12
+              }
+            }
+          }
+        },
+        {
+          "plc_reg_add": "A402",
+          "data_type": "channel",
+          "opcua_reg_add": "P3_A_402_BC",
+          "description": "Boolean channel for address A402",
+          "Memory_Area": "A",
+          "metadata": {
+            "bit_count": 2,
+            "bit_mappings": {
+              "bit_09": {
+                "address": "A402.09",
+                "description": "I/O照合異常",
+                "bit_position": 9
+              },
+              "bit_04": {
+                "address": "A402.04",
+                "description": "電池異常",
+                "bit_position": 4
+              }
+            }
+          }
+        },
+        {
+          "plc_reg_add": "10",
+          "data_type": "channel",
+          "opcua_reg_add": "P3_IO_10_C",
+          "description": "　　　　",
+          "Memory_Area": "I/O"
+        },
+        {
+          "plc_reg_add": "100",
+          "data_type": "channel",
+          "opcua_reg_add": "P3_IO_100_C",
+          "description": "yes",
+          "Memory_Area": "I/O"
+        },
+        {
+          "plc_reg_add": "1234",
+          "data_type": "channel",
+          "opcua_reg_add": "P3_IO_1234_C",
+          "description": "just move",
+          "Memory_Area": "I/O"
+        },
+        {
+          "plc_reg_add": "D200",
+          "data_type": "channel",
+          "opcua_reg_add": "P3_D_200_C",
+          "description": "Float number",
+          "Memory_Area": "D"
+        },
+        {
+          "plc_reg_add": "D201",
+          "data_type": "channel",
+          "opcua_reg_add": "P3_D_201_C",
+          "description": "　",
+          "Memory_Area": "D"
+        }
+      ]
+    }
+  ]
+}

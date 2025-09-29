@@ -185,6 +185,27 @@ export default function AppLayout({ children }: AppLayoutProps) {
     },
   });
 
+  // Check PLC Status mutation
+  const checkStatusMutation = useMutation({
+    mutationFn: api.checkPLCStatus,
+    onSuccess: (statusData) => {
+      queryClient.invalidateQueries({ queryKey: ['api', 'plcs'] });
+      queryClient.invalidateQueries({ queryKey: ['api', 'plcs', 'withMappings'] });
+      toast({
+        title: "Status Checked",
+        description: statusData.message,
+        variant: statusData.is_connected ? "success" : "warning",
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: "Status Check Failed",
+        description: error.message,
+        variant: "error",
+      });
+    },
+  });
+
   // WebSocket connection
   useEffect(() => {
     const socket = socketManager.connect();
@@ -244,6 +265,11 @@ export default function AppLayout({ children }: AppLayoutProps) {
     navigate(`/?plcId=${plcId}`);
   };
 
+  const handleCheckStatus = (plcId: string) => {
+    console.log('AppLayout: checking status for PLC:', plcId);
+    checkStatusMutation.mutate(plcId);
+  };
+
   // Custom sidebar width for better content layout
   const style = {
     "--sidebar-width": "20rem",       // 320px for better content
@@ -269,6 +295,7 @@ export default function AppLayout({ children }: AppLayoutProps) {
           onSelectPlc={handleSelectPlc}
           onConnect={handleConnectPLC}
           onDisconnect={handleDisconnectPLC}
+          onCheckStatus={handleCheckStatus}
           onRefresh={(id) => console.log(`Refresh PLC ${id}`)}
           onConfigure={(id) => console.log(`Configure PLC ${id}`)}
           onDelete={handleDeletePLC}

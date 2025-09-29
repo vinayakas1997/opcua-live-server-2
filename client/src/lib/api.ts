@@ -66,6 +66,21 @@ export const api = {
     return response.json();
   },
 
+  async checkPLCStatus(id: string): Promise<{
+    plc_id: string;
+    plc_no: number;
+    opcua_url: string;
+    is_connected: boolean;
+    status: string;
+    last_checked: string;
+    message: string;
+    backend_response: boolean;
+  }> {
+    const response = await fetch(`${API_BASE}/plcs/${id}/check-status`);
+    if (!response.ok) throw new Error("Failed to check PLC status");
+    return response.json();
+  },
+
   // File Upload
   async uploadJSONConfig(file: File): Promise<{ success: boolean; plc: PLC }> {
     const formData = new FormData();
