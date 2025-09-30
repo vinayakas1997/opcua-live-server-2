@@ -427,6 +427,36 @@ async def read_nodes(payload: ClientSendNodeNames):
     3. Read current values
     4. Return {node_name: value} dict
     """
+    # Preprocessing: Handle bit-mapped BC nodes
+    bit_mappings = {}  # {base_name: [bit_positions]}
+    filtered_nodes = []
+
+    for node_name in payload.node_names:
+        if "_BC_bit_" in node_name:
+            # Extract base name and bit position
+            parts = node_name.split("_bit_")
+            if len(parts) == 2:
+                base_name = parts[0]  # e.g., "P1_IO_1_BC"
+                try:
+                    bit_pos = int(parts[1])  # e.g., 0, 1, 2, ...
+                    if base_name not in bit_mappings:
+                        bit_mappings[base_name] = []
+                    bit_mappings[base_name].append(bit_pos)
+                except ValueError:
+                    # Invalid bit position, treat as regular node
+                    filtered_nodes.append(node_name)
+        else:
+            # Regular node
+            filtered_nodes.append(node_name)
+
+    # Ensure base BC names are in filtered_nodes
+    for base_name in bit_mappings:
+        if base_name not in filtered_nodes:
+            filtered_nodes.append(base_name)
+
+    # Now filtered_nodes contains unique base names + regular nodes
+    # bit_mappings contains {base_name: [bit_positions]}
+
     try:
         cur = db_conn.cursor()
         # 0) properly managing the nodes 
@@ -438,13 +468,13 @@ async def read_nodes(payload: ClientSendNodeNames):
             raise HTTPException(status_code=404, detail=f"PLC {payload.plc_no} not found")
         opcua_url = row[0]
 
-        # 2) Fetch node_ids for the given node_names
+        # 2) Fetch node_ids for the filtered node names
         query = f"""
-        SELECT node_name, node_id 
-        FROM nodes 
-        WHERE plc_no = ? AND node_name IN ({','.join(['?']*len(payload.node_names))})
+        SELECT node_name, node_id
+        FROM nodes
+        WHERE plc_no = ? AND node_name IN ({','.join(['?']*len(filtered_nodes))})
         """
-        cur.execute(query, (payload.plc_no, *payload.node_names))
+        cur.execute(query, (payload.plc_no, *filtered_nodes))
         rows = cur.fetchall()
 
         if not rows:
@@ -467,6 +497,32 @@ async def read_nodes(payload: ClientSendNodeNames):
                 data[name] = f"Error: {str(e)}"
 
         client.disconnect()
+
+        # Process bit-mapped BC nodes
+        for base_name, bit_positions in bit_mappings.items():
+            if base_name in data:
+                hex_value = data[base_name]
+                try:
+                    # Convert hex string to integer, then to 16-bit binary
+                    int_value = int(hex_value, 16)
+                    binary_string = format(int_value, '016b')  # 16-bit binary, MSB first
+
+                    # Map each bit position (15-0 order, so bit 15 is index 0)
+                    for bit_pos in bit_positions:
+                        if 0 <= bit_pos <= 15:
+                            bit_value = int(binary_string[15 - bit_pos])  # Extract bit
+                            bit_node_name = f"{base_name}_bit_{bit_pos:02d}"
+                            data[bit_node_name] = bit_value
+                except (ValueError, TypeError):
+                    # If hex conversion fails, set all bits to 0 or error
+                    for bit_pos in bit_positions:
+                        bit_node_name = f"{base_name}_bit_{bit_pos:02d}"
+                        data[bit_node_name] = 0  # or "Error: Invalid hex value"
+
+        # Remove base BC nodes from data (optional, if only bit values are needed)
+        for base_name in bit_mappings:
+            if base_name in data:
+                del data[base_name]
 
         # 4) Return result to client
         return {"data": data}
