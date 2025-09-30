@@ -77,6 +77,9 @@ export default function AppLayout({ children }: AppLayoutProps) {
     onSuccess: (updatedPLC) => {
       queryClient.invalidateQueries({ queryKey: ['api', 'plcs'] });
       queryClient.invalidateQueries({ queryKey: ['api', 'plcs', 'withMappings'] });
+      queryClient.invalidateQueries({ queryKey: ['api', 'plcs', 'all-status'] });
+      // Force immediate refetch to update UI instantly
+      queryClient.refetchQueries({ queryKey: ['api', 'plcs', 'all-status'] });
       setSelectedPLCs(prev => new Set(Array.from(prev).concat(updatedPLC.id)));
       socketManager.subscribeToPLC(updatedPLC.id);
       toast({
@@ -100,6 +103,7 @@ export default function AppLayout({ children }: AppLayoutProps) {
     onSuccess: (updatedPLC) => {
       queryClient.invalidateQueries({ queryKey: ['api', 'plcs'] });
       queryClient.invalidateQueries({ queryKey: ['api', 'plcs', 'withMappings'] });
+      queryClient.invalidateQueries({ queryKey: ['api', 'plcs', 'all-status'] });
       setSelectedPLCs(prev => {
         const newSet = new Set(prev);
         newSet.delete(updatedPLC.id);
@@ -121,27 +125,6 @@ export default function AppLayout({ children }: AppLayoutProps) {
     },
   });
 
-  // Update PLC status mutation
-  const updateStatusMutation = useMutation({
-    mutationFn: ({ plcId, status }: { plcId: string; status: import("@shared/schema").PLCStatus }) =>
-      api.updatePLC(plcId, { status }),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['api', 'plcs'] });
-      queryClient.invalidateQueries({ queryKey: ['api', 'plcs', 'withMappings'] });
-      toast({
-        title: "Status Updated",
-        description: "PLC status updated successfully",
-        variant: "success",
-      });
-    },
-    onError: (error) => {
-      toast({
-        title: "Update Failed",
-        description: error.message,
-        variant: "error",
-      });
-    },
-  });
 
   // Create PLC mutation
   const createMutation = useMutation({
@@ -191,6 +174,7 @@ export default function AppLayout({ children }: AppLayoutProps) {
     onSuccess: (statusData) => {
       queryClient.invalidateQueries({ queryKey: ['api', 'plcs'] });
       queryClient.invalidateQueries({ queryKey: ['api', 'plcs', 'withMappings'] });
+      queryClient.invalidateQueries({ queryKey: ['api', 'plcs', 'all-status'] });
       toast({
         title: "Status Checked",
         description: statusData.message,
@@ -236,10 +220,6 @@ export default function AppLayout({ children }: AppLayoutProps) {
     disconnectMutation.mutate(plcId);
   };
 
-  const handleToggleStatus = (plc: PLC) => {
-    const newStatus = plc.status === 'active' ? 'maintenance' : plc.status === 'maintenance' ? 'active' : plc.status;
-    updateStatusMutation.mutate({ plcId: plc.id, status: newStatus });
-  };
 
   const handleDeletePLC = (plcId: string) => {
     // Also disconnect if currently connected

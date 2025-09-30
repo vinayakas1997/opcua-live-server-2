@@ -176,7 +176,7 @@ export default function EnhancedVariablesTable({
   };
 
   const getStatusBackgroundColor = (status: string) => {
-    return "bg-green-50 dark:bg-green-950/20";
+    return "bg-gray-100";
   };
 
   const renderUserDescriptionCell = (variable: NormalizedVariable) => {
@@ -362,7 +362,7 @@ export default function EnhancedVariablesTable({
 
                 return (
                   <React.Fragment key={variable.id}>
-                    <TableRow className={`group hover:bg-muted/50 ${isBitRow ? 'bg-blue-50 dark:bg-blue-950/20' : ''}`}>
+                    <TableRow className={`group hover:bg-muted/50 h-8 ${isBitRow ? 'bg-blue-50 dark:bg-blue-950/20' : ''}`}>
                       <TableCell className="text-center px-3">
                         <Checkbox
                           checked={isSelected}
@@ -422,7 +422,7 @@ export default function EnhancedVariablesTable({
                         return (
                           <TableRow
                             key={childVariable.id}
-                            className="bg-muted/20 border-l-4 border-l-primary/30 hover:bg-muted/40"
+                            className="bg-muted/20 border-l-4 border-l-primary/30 hover:bg-muted/40 h-8"
                           >
                             <TableCell className="text-center px-3">
                               <Checkbox

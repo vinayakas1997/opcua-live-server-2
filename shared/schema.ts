@@ -46,9 +46,9 @@ export const plcConfigSchema = z.object({
 // PLC with status and runtime info
 export const plcSchema = plcConfigSchema.extend({
   id: z.string(),
-  status: z.enum(["active", "maintenance", "error"]),
+  plc_status: z.enum(["connected", "disconnected"]),
+  opcua_status: z.enum(["connected", "disconnected"]),
   last_checked: z.date(),
-  is_connected: z.boolean(),
   created_at: z.date(),
 });
 
@@ -88,8 +88,8 @@ export type PLC = z.infer<typeof plcSchema>;
 export type NodeData = z.infer<typeof nodeDataSchema>;
 export type ServerStatus = z.infer<typeof serverStatusSchema>;
 export type UserDescription = z.infer<typeof userDescriptionSchema>;
-export type PLCStatus = "active" | "maintenance" | "error";
-export type ConnectionStatus = "active" | "inactive" | "error";
+export type PLCStatus = "connected" | "disconnected";
+export type ConnectionStatus = "connected" | "disconnected";
 
 // Language types
 export type Language = "en" | "jp";
@@ -101,9 +101,9 @@ export const plcs = sqliteTable("plcs", {
   plc_no: integer("plc_no"),
   plc_ip: text("plc_ip").notNull(),
   opcua_url: text("opcua_url").notNull(),
-  status: text("status").notNull().$type<PLCStatus>(),
+  plc_status: text("plc_status").notNull(),
+  opcua_status: text("opcua_status").notNull(),
   last_checked: integer("last_checked").notNull(),
-  is_connected: integer("is_connected").notNull(),
   created_at: integer("created_at").notNull(),
 });
 
@@ -132,9 +132,9 @@ export const mockPLCs: PLC[] = [
       { node_name: "Pressure_01", node_id: "ns=2;i=1002", description: "System pressure", data_type: "Float" },
       { node_name: "Motor_Speed", node_id: "ns=2;i=1003", description: "Motor RPM", data_type: "Int32" },
     ],
-    status: "active",
+    plc_status: "connected",
+    opcua_status: "connected",
     last_checked: new Date(),
-    is_connected: true,
     created_at: new Date(),
   },
   {
@@ -147,9 +147,9 @@ export const mockPLCs: PLC[] = [
       { node_name: "Conveyor_Speed", node_id: "ns=2;i=2001", description: "Conveyor belt speed", data_type: "Float" },
       { node_name: "Package_Count", node_id: "ns=2;i=2002", description: "Total packages", data_type: "Int32" },
     ],
-    status: "maintenance",
+    plc_status: "disconnected",
+    opcua_status: "disconnected",
     last_checked: new Date(),
-    is_connected: false,
     created_at: new Date(),
   },
   {
@@ -162,9 +162,9 @@ export const mockPLCs: PLC[] = [
       { node_name: "Test_Result", node_id: "ns=2;i=3001", description: "Quality test result", data_type: "Boolean" },
       { node_name: "Error_Count", node_id: "ns=2;i=3002", description: "Error counter", data_type: "Int32" },
     ],
-    status: "error",
+    plc_status: "disconnected",
+    opcua_status: "disconnected",
     last_checked: new Date(),
-    is_connected: false,
     created_at: new Date(),
   },
 ];

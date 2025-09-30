@@ -86,6 +86,8 @@ export const api = {
     plc_no: number;
     plc_ip: string;
     opcua_url: string;
+    plc_status: string;
+    opcua_status: string;
     is_connected: boolean;
     status: string;
     last_checked: string;

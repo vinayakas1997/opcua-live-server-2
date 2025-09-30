@@ -31,7 +31,7 @@ export default function PLCListItem({
   const [isConnecting, setIsConnecting] = useState(false);
 
   const handleConnect = async () => {
-    if (plc.is_connected) {
+    if (plc.opcua_status === "connected") {
       console.log(`Disconnecting PLC ${plc.plc_name}`);
       onDisconnect?.(plc.id);
     } else {
@@ -63,7 +63,7 @@ export default function PLCListItem({
     <Card className="p-4 hover-elevate" data-testid={`card-plc-${plc.id}`}>
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3 flex-1 min-w-0">
-          <StatusIndicator status={plc.status} />
+          <StatusIndicator status={plc.opcua_status} />
           
           <div className="flex-1 min-w-0">
             <Tooltip>
@@ -92,9 +92,9 @@ export default function PLCListItem({
           </div>
 
           <div className="flex items-center gap-2">
-            <Badge variant={plc.is_connected ? "default" : "secondary"}>
+            <Badge variant={plc.opcua_status === "connected" ? "default" : "secondary"}>
               <Wifi className="w-3 h-3 mr-1" />
-              {plc.is_connected ? "Connected" : "Disconnected"}
+              {plc.opcua_status === "connected" ? "Connected" : "Disconnected"}
             </Badge>
           </div>
         </div>
@@ -109,7 +109,7 @@ export default function PLCListItem({
           >
             {isConnecting ? (
               <RefreshCw className="h-4 w-4 animate-spin" />
-            ) : plc.is_connected ? (
+            ) : plc.opcua_status === "connected" ? (
               "Disconnect"
             ) : (
               "Connect"

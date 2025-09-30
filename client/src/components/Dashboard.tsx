@@ -81,15 +81,13 @@ export default function Dashboard() {
     const status = statusMap.get(plc.id);
     return {
       ...plc,
-      is_connected: status?.is_connected ?? plc.is_connected,
-      status: (status?.status === 'active' || status?.status === 'error' || status?.status === 'maintenance') 
-        ? status.status as "active" | "error" | "maintenance"
-        : plc.status,
+      is_connected: status?.is_connected ?? false,
+      status: status?.status as "active" | "error" | "maintenance" ?? 'error',
       last_checked: status ? new Date(status.last_checked) : plc.last_checked,
     };
   });
 
-  const connectedPLCs = plcsWithStatus.filter(plc => plc.is_connected);
+  const connectedPLCs = plcsWithStatus.filter(plc => plc.plc_status === "connected");
 
   // Select PLC: either from URL param or first available PLC
   const selectedPLC = selectedPlcId
@@ -188,9 +186,9 @@ export default function Dashboard() {
       plc_no: plc.plc_no,
       plc_ip: plc.plc_ip,
       opcua_url: plc.opcua_url,
-      status: plc.status,
+      status: plc.plc_status === 'connected' ? 'active' : 'error',
       last_checked: plc.last_checked,
-      is_connected: plc.is_connected,
+      is_connected: plc.plc_status === 'connected',
       created_at: plc.created_at,
       variables: variables,
       registerCount: variables.length,
@@ -290,82 +288,75 @@ export default function Dashboard() {
                 </span>
               )}
             </h2>
-            <div className="flex items-center gap-6 text-sm">
-              <span 
-                className={`px-3 py-2 rounded-lg shadow-lg border-2 font-medium ${
-                  selectedPLC.is_connected && selectedPLC.status !== 'error'
-                    ? 'bg-gradient-to-br from-green-500 to-green-600 text-white border-green-400' 
-                    : 'bg-gradient-to-br from-red-500 to-red-600 text-white border-red-400'
-                }`}
-                data-testid="text-plc-ip"
-              >
-                <strong>IP:</strong> {selectedPLC.plc_ip}
-              </span>
-              <span 
-                className={`px-3 py-2 rounded-lg shadow-lg border-2 font-medium ${
-                  getOpcuaUrlStatus(selectedPLC.opcua_url)
-                    ? 'bg-gradient-to-br from-green-500 to-green-600 text-white border-green-400' 
-                    : 'bg-gradient-to-br from-red-500 to-red-600 text-white border-red-400'
-                }`}
-                data-testid="text-opcua-url"
-              >
-                <strong>OPCUA URL:</strong> {selectedPLC.opcua_url}
-              </span>
-              <span data-testid="text-register-count" className="text-muted-foreground">
-                <strong>Registers:</strong> {normalizedSelectedPLC?.registerCount || 0}
-              </span>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-6 text-sm">
+                <span
+                  className={`px-3 py-2 rounded-lg shadow-lg border-2 font-medium ${
+                    selectedPLCStatus?.plc_status === 'connected'
+                      ? 'bg-gradient-to-br from-green-500 to-green-600 text-white border-green-400'
+                      : 'bg-gradient-to-br from-red-500 to-red-600 text-white border-red-400'
+                  }`}
+                  data-testid="text-plc-ip"
+                >
+                  <strong>IP:</strong> {selectedPLC.plc_ip}
+                </span>
+                <span
+                  className={`px-3 py-2 rounded-lg shadow-lg border-2 font-medium ${
+                    selectedPLCStatus?.opcua_status === 'connected'
+                      ? 'bg-gradient-to-br from-green-500 to-green-600 text-white border-green-400'
+                      : 'bg-gradient-to-br from-red-500 to-red-600 text-white border-red-400'
+                  }`}
+                  data-testid="text-opcua-url"
+                >
+                  <strong>OPCUA URL:</strong> {selectedPLC.opcua_url}
+                </span>
+                <span data-testid="text-register-count" className="text-muted-foreground">
+                  <strong>Registers:</strong> {normalizedSelectedPLC?.registerCount || 0}
+                </span>
+              </div>
+              <div className="flex items-center gap-4">
+                <Button
+                  variant="default"
+                  size="sm"
+                  onClick={handleExportCSV}
+                  className="gap-2 bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white border-0 shadow-lg hover:shadow-xl transition-all duration-200"
+                  data-testid="button-export-csv"
+                >
+                  <Download className="w-4 h-4" />
+                  Export CSV
+                </Button>
+                <div className="flex items-center gap-2 px-3 py-1.5 bg-muted rounded-lg">
+                  <div className={`w-2 h-2 rounded-full ${connectedPLCs.length > 0 ? 'bg-green-500' : 'bg-red-500'}`}></div>
+                  <span className="text-sm font-medium" data-testid="text-plcs-connected">
+                    {connectedPLCs.length}/{plcsWithStatus.length} PLCs Connected
+                  </span>
+                </div>
+                <div className={`flex items-center gap-2 px-3 py-1.5 rounded-lg ${
+                  hasError
+                    ? 'bg-red-500/20 border-2 border-red-400'
+                    : 'bg-muted'
+                }`}>
+                  <div className={`w-2 h-2 rounded-full ${
+                    isRefreshing
+                      ? 'bg-blue-500 animate-spin'
+                      : hasError
+                        ? 'bg-red-500'
+                        : 'bg-blue-500 animate-pulse'
+                  }`}>
+                    {isRefreshing && <Loader2 className="w-2 h-2" />}
+                  </div>
+                  <span className={`text-sm font-medium ${
+                    hasError ? 'text-red-400' : ''
+                  }`} data-testid="text-last-updated">
+                    Last Updated: {lastUpdateTime}
+                  </span>
+                </div>
+              </div>
             </div>
           </div>
         </div>
       )}
 
-      <div className="p-6 border-b">
-        <div className="flex items-center justify-between">
-          <h1 className="text-3xl font-bold" data-testid="text-dashboard-title">
-            {selectedPLC ? `${selectedPLC.plc_name} Variables` : "OPC UA Dashboard"}
-          </h1>
-          <div className="flex flex-col items-end gap-2">
-            <div className="flex items-center gap-4">
-              <Button
-                variant="default"
-                size="sm"
-                onClick={handleExportCSV}
-                className="gap-2 bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white border-0 shadow-lg hover:shadow-xl transition-all duration-200"
-                data-testid="button-export-csv"
-              >
-                <Download className="w-4 h-4" />
-                Export CSV
-              </Button>
-              <div className="flex items-center gap-2 px-3 py-1.5 bg-muted rounded-lg">
-                <div className={`w-2 h-2 rounded-full ${connectedPLCs.length > 0 ? 'bg-green-500' : 'bg-red-500'}`}></div>
-                <span className="text-sm font-medium" data-testid="text-plcs-connected">
-                  {connectedPLCs.length}/{plcsWithStatus.length} PLCs Connected
-                </span>
-              </div>
-              <div className={`flex items-center gap-2 px-3 py-1.5 rounded-lg ${
-                hasError 
-                  ? 'bg-red-500/20 border-2 border-red-400' 
-                  : 'bg-muted'
-              }`}>
-                <div className={`w-2 h-2 rounded-full ${
-                  isRefreshing 
-                    ? 'bg-blue-500 animate-spin' 
-                    : hasError 
-                      ? 'bg-red-500' 
-                      : 'bg-blue-500 animate-pulse'
-                }`}>
-                  {isRefreshing && <Loader2 className="w-2 h-2" />}
-                </div>
-                <span className={`text-sm font-medium ${
-                  hasError ? 'text-red-400' : ''
-                }`} data-testid="text-last-updated">
-                  Last Updated: {lastUpdateTime}
-                </span>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
 
       <div className="flex-1 overflow-hidden">
         <div className="h-full flex flex-col gap-6">

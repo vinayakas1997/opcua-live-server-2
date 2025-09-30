@@ -35,9 +35,9 @@ const groupPLCsByServer = (plcs: PLC[]) => {
   return Array.from(grouped.entries()).map(([url, plcs]) => ({
     serverUrl: url,
     plcs,
-    connectedCount: plcs.filter(p => p.is_connected).length,
+    connectedCount: plcs.filter(p => p.plc_status === 'connected').length,
     totalCount: plcs.length,
-    status: plcs.some(p => p.is_connected) ? "connected" : "disconnected",
+    status: plcs.some(p => p.plc_status === 'connected') ? "connected" : "disconnected",
     lastUpdated: Math.max(...plcs.map(p => new Date(p.last_checked ?? 0).getTime())),
   }));
 };
@@ -142,7 +142,7 @@ export default function ServersPage() {
                     <>
                       <CollapsibleTrigger asChild>
                         <TableRow 
-                          className="cursor-pointer hover-elevate"
+                          className="cursor-pointer hover-elevate h-4"
                           onClick={() => toggleServerExpansion(server.serverUrl)}
                           data-testid={`row-server-${server.serverUrl}`}
                         >
@@ -182,7 +182,7 @@ export default function ServersPage() {
                                     href={`/?plcId=${plc.id}`}
                                     data-testid={`link-plc-${plc.id}`}
                                   >
-                                    <div className="flex items-center justify-between p-3 border rounded hover-elevate">
+                                    <div className="flex items-center justify-between p-3 border rounded hover-elevate min-h-12">
                                       <div className="flex items-center gap-3">
                                         <div>
                                           <div className="font-medium" data-testid={`text-plc-name-${plc.id}`}>
@@ -194,7 +194,7 @@ export default function ServersPage() {
                                         </div>
                                       </div>
                                       <div className="flex items-center gap-2">
-                                        {getStatusBadge(plc.is_connected ? "connected" : "disconnected")}
+                                        {getStatusBadge(plc.plc_status === 'connected' ? "connected" : "disconnected")}
                                       </div>
                                     </div>
                                   </Link>

@@ -33,19 +33,16 @@ class ServerSendDataDict(BaseModel):
     data: Dict[str, Any]
 
 class ConnectPLCResponse(BaseModel):
-    status: str
     plc_no: int
-    nodes_registered: int
+    plc_status: str
+    opcua_status: str
 
 class PLCStatusResponse(BaseModel):
     plc_id: str
     plc_no: int
-    plc_ip: str
     opcua_url: str
     plc_status: str
     opcua_status: str
-    is_connected: bool
-    status: str
     last_checked: str
     message: str
 
@@ -65,62 +62,98 @@ class RootResponse(BaseModel):
 db_conn = None  
 
 # ---- Background monitoring function ----
-async def monitor_plc_status():
+# async def monitor_plc_status():
+#     """
+#     Background task that monitors PLC and OPC UA status every 30 seconds
+#     """
+#     while True:
+#         try:
+#             await asyncio.sleep(30)  # Wait 30 seconds
+#
+#             if not db_conn:
+#                 continue
+#
+#             # Query all PLCs with heartbeat nodes
+#             cur = db_conn.cursor()
+#             cur.execute("SELECT plc_no, opcua_url, opcua_reg_hb_node_id FROM plcs WHERE opcua_reg_hb_node_id != ''")
+#             plcs = cur.fetchall()
+#
+#             current_time = datetime.now().isoformat()
+#
+#             for plc_no, opcua_url, hb_node_id in plcs:
+#                 if not hb_node_id:  # Skip if no heartbeat node
+#                     continue
+#
+#                 try:
+#                     # Connect and read heartbeat value
+#                     client = Client(opcua_url)
+#                     client.connect()
+#
+#                     # OPC UA connection successful
+#                     opcua_status = "connected"
+#
+#                     # Read PLC status from heartbeat node
+#                     node = client.get_node(hb_node_id)
+#                     value = node.get_value()
+#                     plc_status = "connected" if value else "disconnected"
+#
+#                     client.disconnect()
+#
+#                     # Update both statuses in database
+#                     cur.execute(
+#                         "UPDATE plcs SET plc_status = ?, opcua_status = ?, last_heartbeat_check = ? WHERE plc_no = ?",
+#                         (plc_status, opcua_status, current_time, plc_no)
+#                     )
+#                     print(f"PLC {plc_no}: PLC={plc_status}, OPC UA={opcua_status} (heartbeat: {value})")
+#
+#                 except Exception as e:
+#                     # Connection failed - mark both as disconnected
+#                     cur.execute(
+#                         "UPDATE plcs SET plc_status = ?, opcua_status = ?, last_heartbeat_check = ? WHERE plc_no = ?",
+#                         ("disconnected", "disconnected", current_time, plc_no)
+#                     )
+#                     print(f"PLC {plc_no}: Both disconnected (error: {e})")
+#
+#             db_conn.commit()
+#
+#         except Exception as e:
+#             print(f"Error in status monitor: {e}")
+
+# ---- Dummy background monitoring function ----
+async def dummy_monitor_plc_status():
     """
-    Background task that monitors PLC and OPC UA status every 30 seconds
+    Background task that sends dummy PLC and OPC UA status values every 30 seconds
     """
     while True:
         try:
             await asyncio.sleep(30)  # Wait 30 seconds
-            
+
             if not db_conn:
                 continue
-                
-            # Query all PLCs with heartbeat nodes
+
+            # Query all PLCs
             cur = db_conn.cursor()
-            cur.execute("SELECT plc_no, opcua_url, opcua_reg_hb_node_id FROM plcs WHERE opcua_reg_hb_node_id != ''")
+            cur.execute("SELECT plc_no FROM plcs")
             plcs = cur.fetchall()
-            
+
             current_time = datetime.now().isoformat()
-            
-            for plc_no, opcua_url, hb_node_id in plcs:
-                if not hb_node_id:  # Skip if no heartbeat node
-                    continue
-                    
-                try:
-                    # Connect and read heartbeat value
-                    client = Client(opcua_url)
-                    client.connect()
-                    
-                    # OPC UA connection successful
-                    opcua_status = "connected"
-                    
-                    # Read PLC status from heartbeat node
-                    node = client.get_node(hb_node_id)
-                    value = node.get_value()
-                    plc_status = "connected" if value else "disconnected"
-                    
-                    client.disconnect()
-                    
-                    # Update both statuses in database
-                    cur.execute(
-                        "UPDATE plcs SET plc_status = ?, opcua_status = ?, last_heartbeat_check = ? WHERE plc_no = ?",
-                        (plc_status, opcua_status, current_time, plc_no)
-                    )
-                    print(f"PLC {plc_no}: PLC={plc_status}, OPC UA={opcua_status} (heartbeat: {value})")
-                    
-                except Exception as e:
-                    # Connection failed - mark both as disconnected
-                    cur.execute(
-                        "UPDATE plcs SET plc_status = ?, opcua_status = ?, last_heartbeat_check = ? WHERE plc_no = ?",
-                        ("disconnected", "disconnected", current_time, plc_no)
-                    )
-                    print(f"PLC {plc_no}: Both disconnected (error: {e})")
-            
+
+            for (plc_no,) in plcs:
+                # Send dummy connected values
+                plc_status = "connected"
+                opcua_status = "connected"
+
+                # Update both statuses in database with dummy values
+                cur.execute(
+                    "UPDATE plcs SET plc_status = ?, opcua_status = ?, last_heartbeat_check = ? WHERE plc_no = ?",
+                    (plc_status, opcua_status, current_time, plc_no)
+                )
+                print(f"Dummy PLC {plc_no}: PLC={plc_status}, OPC UA={opcua_status}")
+
             db_conn.commit()
-            
+
         except Exception as e:
-            print(f"Error in status monitor: {e}")
+            print(f"Error in dummy status monitor: {e}")
 
 # ---- Lifespan context ----
 @asynccontextmanager
@@ -132,9 +165,10 @@ async def lifespan(app: FastAPI):
     print("✅ Database initialized and connected.")
     
     # Start background monitoring
-    monitor_task = asyncio.create_task(monitor_plc_status())
-    print("✅ Background PLC monitoring started.")
-    
+    monitor_task = asyncio.create_task(dummy_monitor_plc_status())
+    print("✅ Dummy background PLC monitoring started.")
+    # monitor_task = asyncio.create_task(monitor_plc_status())
+    # print("✅ Background PLC monitoring started.")
     yield
     
     # Shutdown
@@ -165,127 +199,222 @@ async def root():
     return {"message": "FastAPI OPC UA backend is running 🚀"}
 
 # 1: connect and register PLC + nodes ----
+# @app.post("/connect", response_model=ConnectPLCResponse)
+# async def connect_plc(payload: ClientSendOpcuaUrl):
+#     """
+#     Connects to the PLC's OPC UA server, browses all nodes, filters them
+#     according to naming convention, and stores both PLC info and nodes in DB.
+#     """
+#     result = register_plc_and_nodes(payload.plc_no, payload.opcua_url, db_conn)
+#
+#     if result.get("status") == "error":
+#         raise HTTPException(status_code=500, detail=result.get("message"))
+
+#     # Query the database to get current plc_status and opcua_status for this plc_no
+#     cur = db_conn.cursor()
+#     cur.execute("SELECT plc_status, opcua_status FROM plcs WHERE plc_no = ?", (payload.plc_no,))
+#     row = cur.fetchone()
+#     if not row:
+#         raise HTTPException(status_code=404, detail=f"PLC {payload.plc_no} not found")
+#
+#     plc_status, opcua_status = row
+#
+#     # Return the current status from database
+#     return {
+#         "plc_no": payload.plc_no,
+#         "plc_status": plc_status or "disconnected",
+#         "opcua_status": opcua_status or "disconnected"
+#     }
+
+# Dummy connect PLC function ----
 @app.post("/connect", response_model=ConnectPLCResponse)
-async def connect_plc(payload: ClientSendOpcuaUrl):
+async def dummy_connect_plc(payload: ClientSendOpcuaUrl):
     """
-    Connects to the PLC's OPC UA server, browses all nodes, filters them
-    according to naming convention, and stores both PLC info and nodes in DB.
+    Dummy function that simulates connecting to PLC and registering nodes.
+    Queries the database for current plc_status and opcua_status.
     """
-    result = register_plc_and_nodes(payload.plc_no, payload.opcua_url, db_conn)
+    try:
+        if db_conn is None:
+            raise HTTPException(status_code=500, detail="Database connection not available")
 
-    if result.get("status") == "error":
-        raise HTTPException(status_code=500, detail=result.get("message"))
+        cur = db_conn.cursor()
 
-    # Return the opcua_status as the main status (since browsing was successful)
-    return {
-        "status": result.get("opcua_status", "connected"),
-        "plc_no": payload.plc_no,
-        "nodes_registered": result.get("nodes_count", 0)
-    }
+        # Query the plcs table for the plc_no to get current status
+        cur.execute("SELECT plc_status, opcua_status FROM plcs WHERE plc_no = ?", (payload.plc_no,))
+        row = cur.fetchone()
+
+        if not row:
+            raise HTTPException(status_code=404, detail=f"PLC {payload.plc_no} not found")
+
+        plc_status, opcua_status = row
+
+        # Simulate some processing time
+        await asyncio.sleep(0.1)
+
+        # Return connection response with current status from database
+        return {
+            "plc_no": payload.plc_no,
+            "plc_status": plc_status or "disconnected",
+            "opcua_status": opcua_status or "disconnected"
+        }
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to connect PLC: {str(e)}")
 
 
 # 2: Bulk status check for all PLCs ----
+# @app.get("/all-status", response_model=List[PLCStatusResponse])
+# async def get_all_plcs_status():
+#     """
+#     Returns status for all PLCs in the database with separate PLC and OPC UA statuses.
+#     This endpoint is called by the frontend every 30 seconds for real-time updates.
+#     """
+#     try:
+#         if db_conn is None:
+#             raise HTTPException(status_code=500, detail="Database connection not available")
+#
+#         cur = db_conn.cursor()
+#
+#         # Get all PLCs from database with separate statuses
+#         cur.execute("""
+#             SELECT plc_no, opcua_url, plc_status, opcua_status, opcua_reg_hb_node_id, last_heartbeat_check
+#             FROM plcs
+#             ORDER BY plc_no
+#         """)
+#         plcs = cur.fetchall()
+#
+#         status_results = []
+#         current_time = datetime.now().isoformat()
+#
+#         for plc_no, opcua_url, stored_plc_status, stored_opcua_status, hb_node_id, last_checked in plcs:
+#             plc_status = stored_plc_status or "disconnected"
+#             opcua_status = stored_opcua_status or "disconnected"
+#
+#             try:
+#                 # Try to connect to OPC UA server
+#                 client = Client(opcua_url)
+#                 client.connect()
+#
+#                 # OPC UA connection successful
+#                 opcua_status = "connected"
+#
+#                 # Check PLC status via heartbeat node if available
+#                 if hb_node_id:
+#                     try:
+#                         node = client.get_node(hb_node_id)
+#                         value = node.get_value()
+#                         plc_status = "connected" if value else "disconnected"
+#                     except Exception as e:
+#                         print(f"Error reading heartbeat for PLC {plc_no}: {e}")
+#                         plc_status = "disconnected"
+#
+#                 client.disconnect()
+#
+#                 # Update both statuses in database
+#                 cur.execute(
+#                     "UPDATE plcs SET plc_status = ?, opcua_status = ?, last_heartbeat_check = ? WHERE plc_no = ?",
+#                     (plc_status, opcua_status, current_time, plc_no)
+#                 )
+#
+#                 # Determine overall connection status
+#                 is_connected = opcua_status == "connected"
+#                 overall_status = "active" if is_connected else "error"
+#                 message = f"OPC UA: {opcua_status}, PLC: {plc_status}"
+#
+#                 status_results.append({
+#                     "plc_id": f"plc_{plc_no}",
+#                     "plc_no": plc_no,
+#                     "opcua_url": opcua_url,
+#                     "plc_status": plc_status,
+#                     "opcua_status": opcua_status,
+#                     "last_checked": current_time,
+#                     "message": message
+#                 })
+#
+#             except Exception as e:
+#                 # Connection failed - both statuses disconnected
+#                 plc_status = "disconnected"
+#                 opcua_status = "disconnected"
+#
+#                 cur.execute(
+#                     "UPDATE plcs SET plc_status = ?, opcua_status = ?, last_heartbeat_check = ? WHERE plc_no = ?",
+#                     (plc_status, opcua_status, current_time, plc_no)
+#                 )
+#
+#                 status_results.append({
+#                     "plc_id": f"plc_{plc_no}",
+#                     "plc_no": plc_no,
+#                     "opcua_url": opcua_url,
+#                     "plc_status": plc_status,
+#                     "opcua_status": opcua_status,
+#                     "last_checked": current_time,
+#                     "message": f"Connection failed: {str(e)}"
+#                 })
+#
+#         # Commit all status updates
+#         db_conn.commit()
+#
+#         return status_results
+#
+#     except Exception as e:
+#         print(f"Error in get_all_plcs_status: {e}")
+#         raise HTTPException(status_code=500, detail=f"Failed to get PLCs status: {str(e)}")
+
 @app.get("/all-status", response_model=List[PLCStatusResponse])
-async def get_all_plcs_status():
+async def dummy_get_all_plcs_status():
     """
-    Returns status for all PLCs in the database with separate PLC and OPC UA statuses.
+    Dummy function that returns status for all PLCs with plc_status and opcua_status as 'connected'.
     This endpoint is called by the frontend every 30 seconds for real-time updates.
     """
     try:
         if db_conn is None:
             raise HTTPException(status_code=500, detail="Database connection not available")
-            
+
         cur = db_conn.cursor()
-        
-        # Get all PLCs from database with separate statuses
+
+        # Get all PLCs from database
         cur.execute("""
-            SELECT plc_no, opcua_url, plc_status, opcua_status, opcua_reg_hb_node_id, last_heartbeat_check 
-            FROM plcs 
+            SELECT plc_no, opcua_url, last_heartbeat_check
+            FROM plcs
             ORDER BY plc_no
         """)
         plcs = cur.fetchall()
-        
+
         status_results = []
         current_time = datetime.now().isoformat()
-        
-        for plc_no, opcua_url, stored_plc_status, stored_opcua_status, hb_node_id, last_checked in plcs:
-            plc_status = stored_plc_status or "disconnected"
-            opcua_status = stored_opcua_status or "disconnected"
-            
-            try:
-                # Try to connect to OPC UA server
-                client = Client(opcua_url)
-                client.connect()
-                
-                # OPC UA connection successful
-                opcua_status = "connected"
-                
-                # Check PLC status via heartbeat node if available
-                if hb_node_id:
-                    try:
-                        node = client.get_node(hb_node_id)
-                        value = node.get_value()
-                        plc_status = "connected" if value else "disconnected"
-                    except Exception as e:
-                        print(f"Error reading heartbeat for PLC {plc_no}: {e}")
-                        plc_status = "disconnected"
-                
-                client.disconnect()
-                
-                # Update both statuses in database
-                cur.execute(
-                    "UPDATE plcs SET plc_status = ?, opcua_status = ?, last_heartbeat_check = ? WHERE plc_no = ?",
-                    (plc_status, opcua_status, current_time, plc_no)
-                )
-                
-                # Determine overall connection status
-                is_connected = opcua_status == "connected"
-                overall_status = "active" if is_connected else "error"
-                message = f"OPC UA: {opcua_status}, PLC: {plc_status}"
-                
-                status_results.append({
-                    "plc_id": f"plc_{plc_no}",
-                    "plc_no": plc_no,
-                    "plc_ip": opcua_url.split("://")[1].split(":")[0] if "://" in opcua_url else "unknown",
-                    "opcua_url": opcua_url,
-                    "plc_status": plc_status,
-                    "opcua_status": opcua_status,
-                    "is_connected": is_connected,
-                    "status": overall_status,
-                    "last_checked": current_time,
-                    "message": message
-                })
-                
-            except Exception as e:
-                # Connection failed - both statuses disconnected
-                plc_status = "disconnected"
-                opcua_status = "disconnected"
-                
-                cur.execute(
-                    "UPDATE plcs SET plc_status = ?, opcua_status = ?, last_heartbeat_check = ? WHERE plc_no = ?",
-                    (plc_status, opcua_status, current_time, plc_no)
-                )
-                
-                status_results.append({
-                    "plc_id": f"plc_{plc_no}",
-                    "plc_no": plc_no,
-                    "plc_ip": opcua_url.split("://")[1].split(":")[0] if "://" in opcua_url else "unknown",
-                    "opcua_url": opcua_url,
-                    "plc_status": plc_status,
-                    "opcua_status": opcua_status,
-                    "is_connected": False,
-                    "status": "error",
-                    "last_checked": current_time,
-                    "message": f"Connection failed: {str(e)}"
-                })
-        
+
+        for plc_no, opcua_url, last_checked in plcs:
+            # Set dummy connected statuses
+            plc_status = "connected"
+            opcua_status = "connected"
+
+            # Update both statuses in database with dummy values
+            cur.execute(
+                "UPDATE plcs SET plc_status = ?, opcua_status = ?, last_heartbeat_check = ? WHERE plc_no = ?",
+                (plc_status, opcua_status, current_time, plc_no)
+            )
+
+            message = "Dummy: Connected"
+
+            status_results.append({
+                "plc_id": f"plc_{plc_no}",
+                "plc_no": plc_no,
+                "opcua_url": opcua_url,
+                "plc_status": plc_status,
+                "opcua_status": opcua_status,
+                "last_checked": current_time,
+                "message": message
+            })
+
         # Commit all status updates
         db_conn.commit()
-        
+
         return status_results
-        
+
     except Exception as e:
-        print(f"Error in get_all_plcs_status: {e}")
+        print(f"Error in dummy_get_all_plcs_status: {e}")
         raise HTTPException(status_code=500, detail=f"Failed to get PLCs status: {str(e)}")
 
 #3. Now when the status is connected , recieve the ClientSendNodeNames and send the data through ServerSendDataDict

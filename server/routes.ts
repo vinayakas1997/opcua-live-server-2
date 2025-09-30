@@ -21,6 +21,89 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Bulk PLC Status Check - gets status for all PLCs with separate PLC and OPC UA statuses
+  app.get("/api/plcs/all-status", async (req, res) => {
+    try {
+      // Get PLCs from our database first
+      const plcs = await storage.getAllPLCs(false);
+
+      if (plcs.length === 0) {
+        return res.json([]); // Return empty array if no PLCs
+      }
+
+      let pythonStatusResults = [];
+
+      try {
+        // Call Python backend's new bulk status endpoint
+        const backendResponse = await fetch("http://localhost:8000/all-status", {
+          method: "GET",
+          headers: { "Content-Type": "application/json" },
+        });
+
+        if (backendResponse.ok) {
+          pythonStatusResults = await backendResponse.json();
+        } else {
+          console.warn(`Python backend returned ${backendResponse.status}, using frontend data only`);
+        }
+      } catch (backendError) {
+        console.warn("Python backend not available, using frontend data only:", backendError);
+      }
+
+      const plcMap = new Map(plcs.map(plc => [plc.plc_no, plc]));
+      const statusResults = [];
+
+      // If we have Python backend results, use them
+      for (const pythonStatus of pythonStatusResults) {
+        const plc = plcMap.get(pythonStatus.plc_no);
+
+        if (plc) {
+          // Update PLC status in our database
+          await storage.updatePLC(plc.id, {
+            plc_status: pythonStatus.plc_status,
+            opcua_status: pythonStatus.opcua_status,
+            last_checked: new Date(),
+          });
+
+          statusResults.push({
+            plc_id: plc.id, // Use our database ID
+            plc_no: pythonStatus.plc_no,
+            plc_ip: plc.plc_ip, // Use our stored IP
+            opcua_url: pythonStatus.opcua_url,
+            plc_status: pythonStatus.plc_status,
+            opcua_status: pythonStatus.opcua_status,
+            last_checked: pythonStatus.last_checked,
+            message: pythonStatus.message
+          });
+
+          // Remove from map so we don't process it again
+          plcMap.delete(pythonStatus.plc_no);
+        }
+      }
+
+      // For PLCs not in Python backend, return frontend data with disconnected status
+      for (const [plc_no, plc] of Array.from(plcMap)) {
+        statusResults.push({
+          plc_id: plc.id,
+          plc_no: plc.plc_no || 0,
+          plc_ip: plc.plc_ip,
+          opcua_url: plc.opcua_url,
+          plc_status: "disconnected",
+          opcua_status: "disconnected",
+          last_checked: new Date().toISOString(),
+          message: "Not connected to backend"
+        });
+      }
+
+      res.json(statusResults);
+    } catch (error) {
+      console.error("Error checking all PLCs status:", error);
+      res.status(500).json({
+        error: "Failed to check PLCs status",
+        message: error instanceof Error ? error.message : "Unknown error"
+      });
+    }
+  });
+
   app.get("/api/plcs/:id", async (req, res) => {
     try {
       const plc = await storage.getPLCById(req.params.id);
@@ -137,20 +220,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       clearTimeout(timeoutId);
 
-      let updatedStatus: "active" | "error" = "error";
-      let isConnected = false;
+      let plcStatus: "connected" | "disconnected" = "disconnected";
+      let opcuaStatus: "connected" | "disconnected" = "disconnected";
 
       if (backendResponse.ok) {
         const backendData = await backendResponse.json();
-        if (backendData.status === "connected") {
-          updatedStatus = "active";
-          isConnected = true;
-        }
+        plcStatus = backendData.plc_status || "connected";
+        opcuaStatus = backendData.opcua_status || "connected";
       }
 
       const updatedPLC = await storage.updatePLC(req.params.id, {
-        status: updatedStatus,
-        is_connected: isConnected,
+        plc_status: plcStatus,
+        opcua_status: opcuaStatus,
         last_checked: new Date(),
       });
 
@@ -161,11 +242,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(updatedPLC);
     } catch (error) {
       console.error("Error connecting PLC:", error);
-      // On any error, ensure status is error
+      // On any error, ensure status is disconnected
       try {
         await storage.updatePLC(req.params.id, {
-          status: "error",
-          is_connected: false,
+          plc_status: "disconnected",
+          opcua_status: "disconnected",
           last_checked: new Date(),
         });
       } catch (updateError) {
@@ -178,8 +259,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/plcs/:id/disconnect", async (req, res) => {
     try {
       const plc = await storage.updatePLC(req.params.id, {
-        is_connected: false,
-        status: "maintenance",
+        plc_status: "disconnected",
+        opcua_status: "disconnected",
         last_checked: new Date(),
       });
       if (!plc) {
@@ -192,93 +273,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Bulk PLC Status Check - gets status for all PLCs with separate PLC and OPC UA statuses
-  app.get("/api/plcs/all-status", async (req, res) => {
-    try {
-      // Get PLCs from our database first
-      const plcs = await storage.getAllPLCs(false);
-      
-      if (plcs.length === 0) {
-        return res.json([]); // Return empty array if no PLCs
-      }
-
-      let pythonStatusResults = [];
-      
-      try {
-        // Call Python backend's new bulk status endpoint
-        const backendResponse = await fetch("http://localhost:8000/all-status", {
-          method: "GET",
-          headers: { "Content-Type": "application/json" },
-        });
-
-        if (backendResponse.ok) {
-          pythonStatusResults = await backendResponse.json();
-        } else {
-          console.warn(`Python backend returned ${backendResponse.status}, using frontend data only`);
-        }
-      } catch (backendError) {
-        console.warn("Python backend not available, using frontend data only:", backendError);
-      }
-
-      const plcMap = new Map(plcs.map(plc => [plc.plc_no, plc]));
-      const statusResults = [];
-
-      // If we have Python backend results, use them
-      for (const pythonStatus of pythonStatusResults) {
-        const plc = plcMap.get(pythonStatus.plc_no);
-        
-        if (plc) {
-          // Update PLC status in our database
-          const connectionStatus = pythonStatus.status === "active" ? "active" : "error";
-          await storage.updatePLC(plc.id, {
-            status: connectionStatus,
-            is_connected: pythonStatus.is_connected,
-            last_checked: new Date(),
-          });
-
-          statusResults.push({
-            plc_id: plc.id, // Use our database ID
-            plc_no: pythonStatus.plc_no,
-            plc_ip: plc.plc_ip, // Use our stored IP
-            opcua_url: pythonStatus.opcua_url,
-            plc_status: pythonStatus.plc_status,
-            opcua_status: pythonStatus.opcua_status,
-            is_connected: pythonStatus.is_connected,
-            status: connectionStatus,
-            last_checked: pythonStatus.last_checked,
-            message: pythonStatus.message
-          });
-          
-          // Remove from map so we don't process it again
-          plcMap.delete(pythonStatus.plc_no);
-        }
-      }
-
-      // For PLCs not in Python backend, return frontend data with disconnected status
-      for (const [plc_no, plc] of Array.from(plcMap)) {
-        statusResults.push({
-          plc_id: plc.id,
-          plc_no: plc.plc_no || 0,
-          plc_ip: plc.plc_ip,
-          opcua_url: plc.opcua_url,
-          plc_status: "disconnected",
-          opcua_status: "disconnected",
-          is_connected: false,
-          status: "error",
-          last_checked: new Date().toISOString(),
-          message: "Not connected to backend"
-        });
-      }
-
-      res.json(statusResults);
-    } catch (error) {
-      console.error("Error checking all PLCs status:", error);
-      res.status(500).json({ 
-        error: "Failed to check PLCs status",
-        message: error instanceof Error ? error.message : "Unknown error"
-      });
-    }
-  });
 
   // PLC Status Check - calls Python backend to verify connection
   app.get("/api/plcs/:id/check-status", async (req, res) => {
@@ -304,15 +298,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
 
       // 3. Process response and determine status
-      let connectionStatus: "active" | "error" = "error";
-      let isConnected = false;
+      let plcStatus: "connected" | "disconnected" = "disconnected";
+      let opcuaStatus: "connected" | "disconnected" = "disconnected";
       let backendMessage = "";
 
       if (backendResponse.ok) {
         const backendData = await backendResponse.json();
         if (backendData.status === "connected") {
-          connectionStatus = "active";
-          isConnected = true;
+          plcStatus = "connected";
+          opcuaStatus = "connected";
           backendMessage = `Connected successfully. ${backendData.nodes_registered || 0} nodes registered.`;
         } else {
           backendMessage = "Backend responded but connection failed";
@@ -324,8 +318,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // 4. Update PLC status in database
       const updatedPLC = await storage.updatePLC(req.params.id, {
-        status: connectionStatus,
-        is_connected: isConnected,
+        plc_status: plcStatus,
+        opcua_status: opcuaStatus,
         last_checked: new Date(),
       });
 
@@ -334,8 +328,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         plc_id: req.params.id,
         plc_no: plc.plc_no,
         opcua_url: plc.opcua_url,
-        is_connected: isConnected,
-        status: connectionStatus,
+        plc_status: plcStatus,
+        opcua_status: opcuaStatus,
         last_checked: new Date(),
         message: backendMessage,
         backend_response: backendResponse.ok
@@ -344,11 +338,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error checking PLC status:", error);
       
-      // On any error, ensure status is error
+      // On any error, ensure status is disconnected
       try {
         await storage.updatePLC(req.params.id, {
-          status: "error",
-          is_connected: false,
+          plc_status: "disconnected",
+          opcua_status: "disconnected",
           last_checked: new Date(),
         });
       } catch (updateError) {

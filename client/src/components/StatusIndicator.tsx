@@ -9,25 +9,15 @@ interface StatusIndicatorProps {
 }
 
 const statusConfig = {
-  active: {
+  connected: {
     color: "bg-green-500",
-    label: "Active",
-    labelJp: "アクティブ",
+    label: "Connected",
+    labelJp: "接続済み",
   },
-  inactive: {
-    color: "bg-gray-400",
-    label: "Inactive", 
-    labelJp: "非アクティブ",
-  },
-  maintenance: {
-    color: "bg-amber-500",
-    label: "Maintenance",
-    labelJp: "メンテナンス",
-  },
-  error: {
-    color: "bg-red-500", 
-    label: "Error",
-    labelJp: "エラー",
+  disconnected: {
+    color: "bg-red-500",
+    label: "Disconnected",
+    labelJp: "未接続",
   },
 };
 

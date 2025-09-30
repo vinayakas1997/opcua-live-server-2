@@ -77,10 +77,8 @@ export function AppSidebar({
     const status = statusMap.get(plc.id);
     return {
       ...plc,
-      is_connected: status?.is_connected ?? plc.is_connected,
-      status: (status?.status === 'active' || status?.status === 'error' || status?.status === 'maintenance') 
-        ? status.status as "active" | "error" | "maintenance"
-        : plc.status,
+      opcua_status: (status as any)?.opcua_status ?? plc.opcua_status,
+      plc_status: (status as any)?.plc_status ?? plc.plc_status,
       last_checked: status ? new Date(status.last_checked) : plc.last_checked,
     };
   });
@@ -98,9 +96,9 @@ export function AppSidebar({
       return comparison;
     });
 
-  const connectedCount = plcsWithStatus.filter(plc => plc.is_connected).length;
-  const activeCount = plcsWithStatus.filter(plc => plc.status === "active").length;
-  const errorCount = plcsWithStatus.filter(plc => plc.status === "error").length;
+  const connectedCount = plcsWithStatus.filter(plc => plc.plc_status === "connected").length;
+  const activeCount = plcsWithStatus.filter(plc => plc.plc_status === "connected").length;
+  const errorCount = plcsWithStatus.filter(plc => plc.plc_status === "disconnected").length;
 
   const handlePLCClick = (plc: PLC) => {
     // Print the PLC number to console
@@ -118,8 +116,8 @@ export function AppSidebar({
   const handleWifiClick = (plc: PLC, e: React.MouseEvent) => {
     e.stopPropagation();
     console.log('AppSidebar: wifi click for PLC:', plc.id);
-    
-    if (selectedPLCs.has(plc.id)) {
+
+    if (plc.plc_status === 'connected') {
       onDisconnect(plc.id);
     } else {
       onConnect(plc.id);
@@ -201,7 +199,7 @@ export function AppSidebar({
                         data-testid={`sidebar-plc-${plc.id}`}
                       >
                         <div className="flex items-center gap-2 min-w-0 flex-1">
-                          <StatusIndicator status={plc.status} size="sm" />
+                          <StatusIndicator status={plc.plc_status} size="sm" />
                           <div className="min-w-0 flex-1">
                             <p className="font-mono text-xs font-medium truncate">
                               {displayName}
@@ -220,14 +218,10 @@ export function AppSidebar({
                             onClick={(e) => handleWifiClick(plc, e)}
                             data-testid={`button-connect-inline-${plc.id}`}
                           >
-                            {plc.status === 'active' ? (
+                            {plc.plc_status === 'connected' ? (
                               <Wifi className="h-3 w-3 text-green-600" />
-                            ) : plc.status === 'maintenance' ? (
-                              <Wifi className="h-3 w-3 text-yellow-600" />
-                            ) : plc.status === 'error' ? (
-                              <WifiOff className="h-3 w-3 text-red-600" />
                             ) : (
-                              <WifiOff className="h-3 w-3 text-muted-foreground" />
+                              <WifiOff className="h-3 w-3 text-red-600" />
                             )}
                           </Button>
                           <Button

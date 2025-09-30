@@ -40,9 +40,9 @@ export class MemStorage implements IStorage {
     const plc: PLC = {
       ...config,
       id,
-      status: "maintenance",
+      plc_status: "disconnected",
+      opcua_status: "disconnected",
       last_checked: new Date(),
-      is_connected: false,
       created_at: new Date(),
     };
     this.plcs.set(id, plc);
@@ -89,12 +89,24 @@ export class SqlStorage implements IStorage {
         plc_no INTEGER,
         plc_ip TEXT NOT NULL,
         opcua_url TEXT NOT NULL,
-        status TEXT NOT NULL,
+        plc_status TEXT NOT NULL,
+        opcua_status TEXT NOT NULL,
         last_checked INTEGER NOT NULL,
-        is_connected INTEGER NOT NULL,
         created_at INTEGER NOT NULL
       )
     `);
+
+    // Add new columns if they don't exist (for migration)
+    try {
+      await this.db.run(`ALTER TABLE plcs ADD COLUMN plc_status TEXT DEFAULT 'disconnected'`);
+    } catch (e) {
+      // Column might already exist
+    }
+    try {
+      await this.db.run(`ALTER TABLE plcs ADD COLUMN opcua_status TEXT DEFAULT 'disconnected'`);
+    } catch (e) {
+      // Column might already exist
+    }
 
     await this.db.run(`
       CREATE TABLE IF NOT EXISTS variables (
@@ -132,8 +144,9 @@ export class SqlStorage implements IStorage {
         const plc: PLC = {
           ...plcRow,
           plc_no: plcRow.plc_no || undefined,
+          plc_status: plcRow.plc_status as "connected" | "disconnected",
+          opcua_status: plcRow.opcua_status as "connected" | "disconnected",
           last_checked: new Date(plcRow.last_checked),
-          is_connected: !!plcRow.is_connected,
           created_at: new Date(plcRow.created_at),
           address_mappings,
         };
@@ -157,8 +170,9 @@ export class SqlStorage implements IStorage {
       return {
         ...plcRow[0],
         plc_no: plcRow[0].plc_no || undefined,
+        plc_status: plcRow[0].plc_status as "connected" | "disconnected",
+        opcua_status: plcRow[0].opcua_status as "connected" | "disconnected",
         last_checked: new Date(plcRow[0].last_checked),
-        is_connected: !!plcRow[0].is_connected,
         created_at: new Date(plcRow[0].created_at),
         address_mappings: variablesData.map(v => ({
           node_name: v.node_name,
@@ -188,9 +202,9 @@ export class SqlStorage implements IStorage {
       plc_no: config.plc_no,
       plc_ip: config.plc_ip,
       opcua_url: config.opcua_url,
-      status: "maintenance" as const,
+      plc_status: "disconnected" as const,
+      opcua_status: "disconnected" as const,
       last_checked: now,
-      is_connected: false,
       created_at: now,
     };
 
@@ -200,9 +214,9 @@ export class SqlStorage implements IStorage {
       plc_no: plcData.plc_no,
       plc_ip: plcData.plc_ip,
       opcua_url: plcData.opcua_url,
-      status: plcData.status,
+      plc_status: plcData.plc_status,
+      opcua_status: plcData.opcua_status,
       last_checked: plcData.last_checked.getTime(),
-      is_connected: plcData.is_connected ? 1 : 0,
       created_at: plcData.created_at.getTime(),
     });
 
@@ -221,6 +235,8 @@ export class SqlStorage implements IStorage {
 
     return {
       ...plcData,
+      plc_status: plcData.plc_status,
+      opcua_status: plcData.opcua_status,
       address_mappings: config.address_mappings,
     };
   }
@@ -240,9 +256,9 @@ export class SqlStorage implements IStorage {
       plc_no: rawConfig.plc_no,
       plc_ip: rawConfig.plc_ip,
       opcua_url: rawConfig.opcua_url,
-      status: "maintenance" as const,
+      plc_status: "disconnected" as const,
+      opcua_status: "disconnected" as const,
       last_checked: now,
-      is_connected: false,
       created_at: now,
     };
 
@@ -252,9 +268,9 @@ export class SqlStorage implements IStorage {
       plc_no: plcData.plc_no,
       plc_ip: plcData.plc_ip,
       opcua_url: plcData.opcua_url,
-      status: plcData.status,
+      plc_status: plcData.plc_status,
+      opcua_status: plcData.opcua_status,
       last_checked: plcData.last_checked.getTime(),
-      is_connected: plcData.is_connected ? 1 : 0,
       created_at: plcData.created_at.getTime(),
     });
 
@@ -294,6 +310,8 @@ export class SqlStorage implements IStorage {
 
     return {
       ...plcData,
+      plc_status: plcData.plc_status,
+      opcua_status: plcData.opcua_status,
       address_mappings: rawConfig.address_mappings.map((m: any) => ({
         node_name: m.opcua_reg_add,
         node_id: m.plc_reg_add,
@@ -312,9 +330,9 @@ export class SqlStorage implements IStorage {
     if (updates.plc_no !== undefined) updateData.plc_no = updates.plc_no;
     if (updates.plc_ip !== undefined) updateData.plc_ip = updates.plc_ip;
     if (updates.opcua_url !== undefined) updateData.opcua_url = updates.opcua_url;
-    if (updates.status !== undefined) updateData.status = updates.status;
+    if (updates.plc_status !== undefined) updateData.plc_status = updates.plc_status;
+    if (updates.opcua_status !== undefined) updateData.opcua_status = updates.opcua_status;
     if (updates.last_checked !== undefined) updateData.last_checked = updates.last_checked.getTime();
-    if (updates.is_connected !== undefined) updateData.is_connected = updates.is_connected ? 1 : 0;
 
     if (Object.keys(updateData).length > 0) {
       await this.db.update(plcs).set(updateData).where(eq(plcs.id, id));
