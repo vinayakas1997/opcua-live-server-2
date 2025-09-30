@@ -7,7 +7,7 @@ import { useLanguage } from "@/contexts/LanguageContext";
 import { api } from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
-import { Download } from "lucide-react";
+import { Download, Loader2 } from "lucide-react";
 import { type PLC } from "@shared/schema";
 import { type NormalizedPLC, type NormalizedVariable } from "@shared/normalization";
 
@@ -16,6 +16,11 @@ export default function Dashboard() {
   const queryClient = useQueryClient();
   const { toast } = useToast();
   const { t } = useLanguage();
+  
+  // State for error tracking and last update time
+  const [hasError, setHasError] = useState(false);
+  const [lastUpdateTime, setLastUpdateTime] = useState(new Date().toLocaleTimeString());
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
   // Parse plcId from query parameters
   const search = useSearch();
@@ -30,6 +35,36 @@ export default function Dashboard() {
     gcTime: 0,
   });
 
+  // Auto-refresh PLCs status every 30 seconds
+  const { data: plcsStatus = [], isLoading: isStatusLoading, error: statusError } = useQuery({
+    queryKey: ['api', 'plcs', 'all-status'],
+    queryFn: api.getAllPLCsStatus,
+    refetchInterval: 30000, // 30 seconds
+    staleTime: 25000, // Consider data stale after 25 seconds
+    gcTime: 60000, // Keep in cache for 1 minute
+  });
+
+  // Handle status updates with useEffect
+  useEffect(() => {
+    if (statusError) {
+      console.error('Status update failed:', statusError);
+      setHasError(true);
+      setLastUpdateTime(new Date().toLocaleTimeString());
+      setIsRefreshing(false);
+    } else if (plcsStatus.length > 0) {
+      setHasError(false);
+      setLastUpdateTime(new Date().toLocaleTimeString());
+      setIsRefreshing(false);
+    }
+  }, [plcsStatus, statusError]);
+
+  // Track when refresh starts
+  useEffect(() => {
+    if (isStatusLoading) {
+      setIsRefreshing(true);
+    }
+  }, [isStatusLoading]);
+
   // Refetch when selectedPlcId changes to ensure fresh data
   useEffect(() => {
     console.log('Dashboard: selectedPlcId changed to:', selectedPlcId);
@@ -38,12 +73,38 @@ export default function Dashboard() {
     }
   }, [selectedPlcId, refetch]);
 
-  const connectedPLCs = plcs.filter(plc => plc.is_connected);
+  // Create a map of PLC status for quick lookup
+  const statusMap = new Map(plcsStatus.map(status => [status.plc_id, status]));
+
+  // Merge PLCs with their current status
+  const plcsWithStatus = plcs.map(plc => {
+    const status = statusMap.get(plc.id);
+    return {
+      ...plc,
+      is_connected: status?.is_connected ?? plc.is_connected,
+      status: (status?.status === 'active' || status?.status === 'error' || status?.status === 'maintenance') 
+        ? status.status as "active" | "error" | "maintenance"
+        : plc.status,
+      last_checked: status ? new Date(status.last_checked) : plc.last_checked,
+    };
+  });
+
+  const connectedPLCs = plcsWithStatus.filter(plc => plc.is_connected);
 
   // Select PLC: either from URL param or first available PLC
   const selectedPLC = selectedPlcId
-    ? plcs.find(p => p.id === selectedPlcId)
-    : plcs.length > 0 ? plcs[0] : null;
+    ? plcsWithStatus.find(p => p.id === selectedPlcId)
+    : plcsWithStatus.length > 0 ? plcsWithStatus[0] : null;
+
+  // Get status for selected PLC
+  const selectedPLCStatus = selectedPLC ? statusMap.get(selectedPLC.id) : null;
+
+  // Check if OPCUA URL has any connected PLCs
+  const getOpcuaUrlStatus = (opcuaUrl: string) => {
+    return plcsWithStatus
+      .filter(plc => plc.opcua_url === opcuaUrl)
+      .some(plc => plc.is_connected);
+  };
 
   console.log('Dashboard: plcs length:', plcs.length);
   console.log('Dashboard: selectedPlcId:', selectedPlcId);
@@ -201,6 +262,13 @@ export default function Dashboard() {
     });
   };
 
+  // Manual refresh function for PLC click
+  const handleManualRefresh = () => {
+    setIsRefreshing(true);
+    queryClient.invalidateQueries({ queryKey: ['api', 'plcs', 'all-status'] });
+    queryClient.invalidateQueries({ queryKey: ['api', 'plcs', 'withMappings'] });
+  };
+
   // Debug logging for PLC data
   console.log('=== Dashboard Debug ===');
   console.log('selectedPLC:', selectedPLC);
@@ -208,29 +276,42 @@ export default function Dashboard() {
   console.log('normalizedSelectedPLC:', normalizedSelectedPLC);
   console.log('normalizedSelectedPLC variables:', normalizedSelectedPLC?.variables);
   console.log('normalizedSelectedPLC variables count:', normalizedSelectedPLC?.variables?.length);
-  
-  // Debug logging (cleaned up for production)
-  // console.log('Selected PLC:', selectedPLC);
-  // console.log('Normalized PLC:', normalizedSelectedPLC);
-  // console.log('Variables count:', normalizedSelectedPLC?.variables?.length || 0);
-
 
   return (
     <div className="h-full flex flex-col">
       {selectedPLC && (
         <div className="p-6 border-b bg-muted/50">
           <div className="space-y-2">
-            <h2 className="text-2xl font-bold" data-testid="text-plc-name">
+            <h2 className="text-2xl font-bold flex items-center gap-2" data-testid="text-plc-name">
               {selectedPLC.plc_name}
+              {hasError && (
+                <span className="text-red-500 text-sm font-normal">
+                  auto update is failing..
+                </span>
+              )}
             </h2>
-            <div className="flex items-center gap-6 text-sm text-muted-foreground">
-              <span data-testid="text-plc-ip">
+            <div className="flex items-center gap-6 text-sm">
+              <span 
+                className={`px-3 py-2 rounded-lg shadow-lg border-2 font-medium ${
+                  selectedPLC.is_connected && selectedPLC.status !== 'error'
+                    ? 'bg-gradient-to-br from-green-500 to-green-600 text-white border-green-400' 
+                    : 'bg-gradient-to-br from-red-500 to-red-600 text-white border-red-400'
+                }`}
+                data-testid="text-plc-ip"
+              >
                 <strong>IP:</strong> {selectedPLC.plc_ip}
               </span>
-              <span data-testid="text-opcua-url">
+              <span 
+                className={`px-3 py-2 rounded-lg shadow-lg border-2 font-medium ${
+                  getOpcuaUrlStatus(selectedPLC.opcua_url)
+                    ? 'bg-gradient-to-br from-green-500 to-green-600 text-white border-green-400' 
+                    : 'bg-gradient-to-br from-red-500 to-red-600 text-white border-red-400'
+                }`}
+                data-testid="text-opcua-url"
+              >
                 <strong>OPCUA URL:</strong> {selectedPLC.opcua_url}
               </span>
-              <span data-testid="text-register-count">
+              <span data-testid="text-register-count" className="text-muted-foreground">
                 <strong>Registers:</strong> {normalizedSelectedPLC?.registerCount || 0}
               </span>
             </div>
@@ -258,13 +339,27 @@ export default function Dashboard() {
               <div className="flex items-center gap-2 px-3 py-1.5 bg-muted rounded-lg">
                 <div className={`w-2 h-2 rounded-full ${connectedPLCs.length > 0 ? 'bg-green-500' : 'bg-red-500'}`}></div>
                 <span className="text-sm font-medium" data-testid="text-plcs-connected">
-                  {connectedPLCs.length}/{plcs.length} PLCs Connected
+                  {connectedPLCs.length}/{plcsWithStatus.length} PLCs Connected
                 </span>
               </div>
-              <div className="flex items-center gap-2 px-3 py-1.5 bg-muted rounded-lg">
-                <div className="w-2 h-2 rounded-full bg-blue-500 animate-pulse"></div>
-                <span className="text-sm font-medium" data-testid="text-last-updated">
-                  Last Updated: {new Date().toLocaleTimeString()}
+              <div className={`flex items-center gap-2 px-3 py-1.5 rounded-lg ${
+                hasError 
+                  ? 'bg-red-500/20 border-2 border-red-400' 
+                  : 'bg-muted'
+              }`}>
+                <div className={`w-2 h-2 rounded-full ${
+                  isRefreshing 
+                    ? 'bg-blue-500 animate-spin' 
+                    : hasError 
+                      ? 'bg-red-500' 
+                      : 'bg-blue-500 animate-pulse'
+                }`}>
+                  {isRefreshing && <Loader2 className="w-2 h-2" />}
+                </div>
+                <span className={`text-sm font-medium ${
+                  hasError ? 'text-red-400' : ''
+                }`} data-testid="text-last-updated">
+                  Last Updated: {lastUpdateTime}
                 </span>
               </div>
             </div>
@@ -279,7 +374,7 @@ export default function Dashboard() {
               <EnhancedVariablesTable
                 plc={normalizedSelectedPLC || null}
                 onRefresh={() => {
-                  queryClient.invalidateQueries({ queryKey: ['api', 'plcs', 'withMappings'] });
+                  handleManualRefresh();
                   toast({
                     title: t("success"),
                     description: t("dataRefreshed"),
@@ -290,7 +385,7 @@ export default function Dashboard() {
               <LiveDataTable
                 plc={selectedPLC || null}
                 onRefresh={() => {
-                  queryClient.invalidateQueries({ queryKey: ['api', 'plcs', 'withMappings'] });
+                  handleManualRefresh();
                   toast({
                     title: t("success"),
                     description: t("dataRefreshed"),

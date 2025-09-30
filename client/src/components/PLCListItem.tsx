@@ -72,8 +72,14 @@ export default function PLCListItem({
                   <p className="font-mono text-sm font-medium text-foreground">
                     {`P_${plc.plc_no}_${truncatedName}`}
                   </p>
-                  <p className="text-xs text-muted-foreground font-mono">
-                    {plc.plc_ip}
+                  <p 
+                    className={`text-xs font-mono px-2 py-1 rounded text-plc-ip ${
+                      (plc as any).plc_status === 'connected' 
+                        ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200' 
+                        : 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200'
+                    }`}
+                  >
+                    PLC: {plc.plc_ip}
                   </p>
                 </div>
               </TooltipTrigger>
@@ -131,9 +137,17 @@ export default function PLCListItem({
       </div>
 
       <div className="mt-3 pt-3 border-t">
-        <div className="flex items-center justify-between text-xs text-muted-foreground">
-          <span className="font-mono">{plc.opcua_url}</span>
-          <span>
+        <div className="flex items-center justify-between text-xs">
+          <span 
+            className={`font-mono px-2 py-1 rounded text-opcua-url ${
+              (plc as any).opcua_status === 'connected' 
+                ? 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200' 
+                : 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200'
+            }`}
+          >
+            OPC UA: {plc.opcua_url}
+          </span>
+          <span className="text-muted-foreground">
             Last checked: {plc.last_checked.toLocaleTimeString()}
           </span>
         </div>

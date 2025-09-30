@@ -81,6 +81,21 @@ export const api = {
     return response.json();
   },
 
+  async getAllPLCsStatus(): Promise<Array<{
+    plc_id: string;
+    plc_no: number;
+    plc_ip: string;
+    opcua_url: string;
+    is_connected: boolean;
+    status: string;
+    last_checked: string;
+    message: string;
+  }>> {
+    const response = await fetch(`${API_BASE}/plcs/all-status`);
+    if (!response.ok) throw new Error("Failed to fetch all PLCs status");
+    return response.json();
+  },
+
   // File Upload
   async uploadJSONConfig(file: File): Promise<{ success: boolean; plc: PLC }> {
     const formData = new FormData();

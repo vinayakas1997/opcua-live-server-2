@@ -1,0 +1,33 @@
+{
+  "plcs": [
+    {
+      "plc_name": "PLC1",
+      "plc_no": 3,
+      "plc_ip": "192.168.2.2",
+      "opcua_url": "opc.tcp://192.168.1.20:4840",
+      "address_mappings": [
+        {
+          "plc_reg_add": "HEARTBEAT",
+          "data_type": "bool",
+          "opcua_reg_add": "P3_running",
+          "description": "heartbeat of the plc",
+          "Memory_Area": "H"
+        },
+        {
+          "plc_reg_add": "C0001",
+          "data_type": "word",
+          "opcua_reg_add": "P3_C_0001_W1",
+          "description": "Counter itself",
+          "Memory_Area": "C"
+        },
+        {
+          "plc_reg_add": "T1000",
+          "data_type": "channel",
+          "opcua_reg_add": "P3_T_1000_C",
+          "description": "Reset",
+          "Memory_Area": "T"
+        }
+      ]
+    }
+  ]
+}

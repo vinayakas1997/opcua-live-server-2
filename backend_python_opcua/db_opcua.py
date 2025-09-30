@@ -16,9 +16,31 @@ def init_db():
     CREATE TABLE IF NOT EXISTS plcs (
         plc_no INTEGER PRIMARY KEY,
         opcua_url TEXT NOT NULL,
-        nodes_count INTEGER DEFAULT 0
+        opcua_reg_hb_name TEXT NOT NULL,
+        opcua_reg_hb_node_id TEXT NOT NULL,
+        plc_status TEXT DEFAULT 'disconnected',
+        opcua_status TEXT DEFAULT 'disconnected',
+        nodes_count INTEGER DEFAULT 0,
+        last_heartbeat_check TIMESTAMP
     )
     """)
+
+    # Add new columns to existing table if they don't exist
+    try:
+        cursor.execute("ALTER TABLE plcs ADD COLUMN plc_status TEXT DEFAULT 'disconnected'")
+    except sqlite3.OperationalError:
+        pass  # Column already exists
+    
+    try:
+        cursor.execute("ALTER TABLE plcs ADD COLUMN opcua_status TEXT DEFAULT 'disconnected'")
+    except sqlite3.OperationalError:
+        pass  # Column already exists
+    
+    # Migrate existing data: copy old 'status' to both new columns if they exist
+    try:
+        cursor.execute("UPDATE plcs SET plc_status = status, opcua_status = status WHERE plc_status IS NULL OR opcua_status IS NULL")
+    except sqlite3.OperationalError:
+        pass  # Migration not needed
 
     # Create table for nodes
     cursor.execute("""
@@ -81,40 +103,6 @@ def filter_nodes(plc_no: int, nodes_dict: dict):
     return filtered
 
 
-# def register_plc_and_nodes(plc_no: int, opcua_url: str, db_conn):
-#     client = Client(opcua_url)
-#     try:
-#         client.connect()
-#         root = client.get_objects_node()
-
-#         # 1. Browse
-#         all_nodes = recursive_browse(root, {})
-
-#         # 2. Filter based on naming convention
-#         filtered_nodes = filter_nodes(plc_no, all_nodes)
-
-#         # 3. Insert PLC info with nodes_count
-#         cur = db_conn.cursor()
-#         cur.execute(
-#             "INSERT OR REPLACE INTO plcs (plc_no, opcua_url, nodes_count) VALUES (?, ?, ?)",
-#             (plc_no, opcua_url, len(filtered_nodes))
-#         )
-
-#         # 4. Insert all nodes into nodes table
-#         for name, node_id in filtered_nodes.items():
-#             cur.execute(
-#                 "INSERT OR IGNORE INTO nodes (plc_no, node_name, node_id) VALUES (?, ?, ?)",
-#                 (plc_no, name, node_id)
-#             )
-#         db_conn.commit()
-
-#         return {"status": "success", "nodes_count": len(filtered_nodes)}
-
-#     except Exception as e:
-#         return {"status": "error", "message": str(e)}
-
-#     finally:
-#         client.disconnect()
 
 def register_plc_and_nodes(plc_no: int, opcua_url: str, db_conn):
     client = Client(opcua_url)
@@ -128,22 +116,42 @@ def register_plc_and_nodes(plc_no: int, opcua_url: str, db_conn):
         # 2. Filter based on naming convention
         filtered_nodes = filter_nodes(plc_no, all_nodes)
         # print(filtered_nodes) #--checked
-        # 3. Insert PLC info with nodes_count
+        
+        # 3. Find the heartbeat/running node
+        running_node_name = f"P{plc_no}_running"
+        running_node_id = filtered_nodes.get(running_node_name, "")
+        
+        # 4. After successful browsing, set opcua_status as connected
+        opcua_status = "connected"
+        
+        # 5. Check PLC status by reading the running node value if available
+        plc_status = "disconnected"
+        if running_node_id:
+            try:
+                running_node = client.get_node(running_node_id)
+                running_value = running_node.get_value()
+                plc_status = "connected" if running_value else "disconnected"
+            except Exception as e:
+                print(f"Error reading running node: {e}")
+                plc_status = "disconnected"
+        
+        # 6. Insert PLC info with separate statuses
         cur = db_conn.cursor()
         cur.execute(
-            "INSERT OR REPLACE INTO plcs (plc_no, opcua_url, nodes_count) VALUES (?, ?, ?)",
-            (plc_no, opcua_url, len(filtered_nodes))
+            "INSERT OR REPLACE INTO plcs (plc_no, opcua_url, opcua_reg_hb_name, opcua_reg_hb_node_id, plc_status, opcua_status, nodes_count) VALUES (?, ?, ?, ?, ?, ?, ?)",
+            (plc_no, opcua_url, running_node_name if running_node_id else "", running_node_id, plc_status, opcua_status, len(filtered_nodes))
         )
 
-        # 4. Insert all nodes into nodes table
+        # 7. Insert all nodes into nodes table
         for name, node_id in filtered_nodes.items():
             cur.execute(
                 "INSERT OR IGNORE INTO nodes (plc_no, node_name, node_id) VALUES (?, ?, ?)",
                 (plc_no, name, node_id)
             )
+            
         db_conn.commit()
 
-        return {"status": "success", "nodes_count": len(filtered_nodes)}
+        return {"status": "success", "nodes_count": len(filtered_nodes), "plc_status": plc_status, "opcua_status": opcua_status}
 
     except socket.gaierror:
         # Cannot resolve hostname / connection failed
@@ -153,9 +161,9 @@ def register_plc_and_nodes(plc_no: int, opcua_url: str, db_conn):
         # Server is not running
         return {"status": "error", "message": "Connection refused: OPC UA server not reachable"}
 
-    except ua.UaStatusCodeError as e:
-        # OPC UA specific error (e.g., bad session)
-        return {"status": "error", "message": f"OPC UA server error: {e}"}
+    # except ua.UaStatusCodeError as e:
+    #     # OPC UA specific error (e.g., bad session)
+    #     return {"status": "error", "message": f"OPC UA server error: {e}"}
 
     except Exception as e:
         # Fallback for unexpected errors

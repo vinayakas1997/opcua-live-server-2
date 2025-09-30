@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import {
   Sidebar,
   SidebarContent,
@@ -25,6 +26,7 @@ import {
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { useLocation } from "wouter";
 import StatusIndicator from "./StatusIndicator";
+import { api } from "@/lib/api";
 import type { PLC } from "@shared/schema";
 
 interface AppSidebarProps {
@@ -58,7 +60,32 @@ export function AppSidebar({
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
   const [, navigate] = useLocation();
 
-  const filteredAndSortedPLCs = plcs
+  // Get real-time status updates (same as Dashboard)
+  const { data: plcsStatus = [] } = useQuery({
+    queryKey: ['api', 'plcs', 'all-status'],
+    queryFn: api.getAllPLCsStatus,
+    refetchInterval: 30000, // 30 seconds
+    staleTime: 25000,
+    gcTime: 60000,
+  });
+
+  // Create a map of PLC status for quick lookup
+  const statusMap = new Map(plcsStatus.map(status => [status.plc_id, status]));
+
+  // Merge PLCs with their current status
+  const plcsWithStatus = plcs.map(plc => {
+    const status = statusMap.get(plc.id);
+    return {
+      ...plc,
+      is_connected: status?.is_connected ?? plc.is_connected,
+      status: (status?.status === 'active' || status?.status === 'error' || status?.status === 'maintenance') 
+        ? status.status as "active" | "error" | "maintenance"
+        : plc.status,
+      last_checked: status ? new Date(status.last_checked) : plc.last_checked,
+    };
+  });
+
+  const filteredAndSortedPLCs = plcsWithStatus
     .filter(plc => 
       plc.plc_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       (plc.plc_no?.toString() || '').includes(searchTerm) ||
@@ -71,10 +98,9 @@ export function AppSidebar({
       return comparison;
     });
 
-
-  const connectedCount = plcs.filter(plc => selectedPLCs.has(plc.id)).length;
-  const activeCount = plcs.filter(plc => plc.status === "active").length;
-  const errorCount = plcs.filter(plc => plc.status === "error").length;
+  const connectedCount = plcsWithStatus.filter(plc => plc.is_connected).length;
+  const activeCount = plcsWithStatus.filter(plc => plc.status === "active").length;
+  const errorCount = plcsWithStatus.filter(plc => plc.status === "error").length;
 
   const handlePLCClick = (plc: PLC) => {
     // Print the PLC number to console
@@ -84,9 +110,9 @@ export function AppSidebar({
     console.log('AppSidebar: calling onSelectPlc with:', plc.id);
     onSelectPlc(plc.id);
 
-    // Check status instead of connect/disconnect
-    console.log('AppSidebar: calling onCheckStatus with:', plc.id);
-    onCheckStatus(plc.id);
+    // Call connect to trigger backend /connect endpoint
+    console.log('AppSidebar: calling onConnect with:', plc.id);
+    onConnect(plc.id);
   };
 
   const handleWifiClick = (plc: PLC, e: React.MouseEvent) => {
